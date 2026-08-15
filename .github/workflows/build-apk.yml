@@ -3,6 +3,8 @@ name: Build Android APK
 on:
   push:
     branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
   workflow_dispatch:
 
 permissions:
@@ -10,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    name: Build & Release APK
+    name: Build & Export APK
     runs-on: ubuntu-latest
 
     steps:
@@ -23,19 +25,16 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept Android Licenses
-        run: yes | sdkmanager --licenses || true
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.12'
-
-      - name: Prepare Keystore, Environment and Gradle Wrapper
+      - name: Prepare Environment and Keystore
         run: |
+          # 1. Setup .env file
+          if [ -f ".env.example" ] && [ ! -f ".env" ]; then
+            cp .env.example .env
+          elif [ ! -f ".env" ]; then
+            touch .env
+          fi
+
+          # 2. Decode or generate debug.keystore
           if [ -f "debug.keystore.base64" ]; then
             base64 -d debug.keystore.base64 > debug.keystore 2>/dev/null || true
           fi
@@ -43,43 +42,48 @@ jobs:
             echo "Generating fresh debug.keystore..."
             keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
-          if [ -f ".env.example" ] && [ ! -f ".env" ]; then
-            cp .env.example .env
-          elif [ ! -f ".env" ]; then
-            touch .env
-          fi
-          gradle wrapper --gradle-version 8.12 || true
-          chmod +x gradlew || true
 
-      - name: Build Debug APK
+      - name: Setup Android SDK Licenses
         run: |
-          if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug --no-daemon --stacktrace
-          else
-            gradle assembleDebug --no-daemon --stacktrace
-          fi
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || yes | sdkmanager --licenses 2>/dev/null || true
 
-      - name: Prepare Artifact
+      - name: Setup Gradle 8.12
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.12'
+
+      - name: Build Android Debug APK
+        run: |
+          gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Locate and Prepare APK
         run: |
           mkdir -p release_apk
-          find app/build/outputs/apk/ -name "*.apk" -exec cp {} release_apk/App-Debug.apk \; || cp app/build/outputs/apk/debug/app-debug.apk release_apk/App-Debug.apk
+          APK_PATH=$(find app/build/outputs/apk -name "*.apk" | head -n 1)
+          if [ -n "$APK_PATH" ]; then
+            echo "Found APK at: $APK_PATH"
+            cp "$APK_PATH" release_apk/App-Debug.apk
+          else
+            echo "Error: No APK found!"
+            exit 1
+          fi
 
-      - name: Upload Artifact
+      - name: Upload APK to Artifacts (Direct Download)
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
+          name: App-Debug-APK
           path: release_apk/App-Debug.apk
           if-no-files-found: error
           retention-days: 30
 
-      - name: Create Automatic Release (1-Click APK Download)
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         continue-on-error: true
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
         with:
           tag_name: "v1.0.${{ github.run_number }}"
           name: "Android APK Release v1.0.${{ github.run_number }}"
-          body: "🚀 Your Android APK is successfully built and ready to install on your phone."
+          body: "🚀 Your Android APK has been successfully built! Download `App-Debug.apk` below."
           files: release_apk/App-Debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
