@@ -34,7 +34,7 @@ jobs:
         with:
           gradle-version: '8.12'
 
-      - name: Prepare Keystore and Environment
+      - name: Prepare Keystore, Environment and Gradle Wrapper
         run: |
           if [ -f "debug.keystore.base64" ]; then
             base64 -d debug.keystore.base64 > debug.keystore 2>/dev/null || true
@@ -48,20 +48,28 @@ jobs:
           elif [ ! -f ".env" ]; then
             touch .env
           fi
+          gradle wrapper --gradle-version 8.12 || true
+          chmod +x gradlew || true
 
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: |
+          if [ -f "./gradlew" ]; then
+            ./gradlew assembleDebug --no-daemon --stacktrace
+          else
+            gradle assembleDebug --no-daemon --stacktrace
+          fi
 
-      - name: Rename APK for Easy Identification
+      - name: Prepare Artifact
         run: |
           mkdir -p release_apk
-          cp app/build/outputs/apk/debug/app-debug.apk release_apk/App-Debug.apk
+          find app/build/outputs/apk/ -name "*.apk" -exec cp {} release_apk/App-Debug.apk \; || cp app/build/outputs/apk/debug/app-debug.apk release_apk/App-Debug.apk
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-apk
+          name: app-debug-apk
           path: release_apk/App-Debug.apk
+          if-no-files-found: error
           retention-days: 30
 
       - name: Create Automatic Release (1-Click APK Download)
