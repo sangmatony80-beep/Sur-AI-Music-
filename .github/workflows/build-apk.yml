@@ -23,6 +23,12 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android Licenses
+        run: yes | sdkmanager --licenses || true
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -31,7 +37,11 @@ jobs:
       - name: Prepare Keystore and Environment
         run: |
           if [ -f "debug.keystore.base64" ]; then
-            base64 -d debug.keystore.base64 > debug.keystore || true
+            base64 -d debug.keystore.base64 > debug.keystore 2>/dev/null || true
+          fi
+          if [ ! -s "debug.keystore" ]; then
+            echo "Generating fresh debug.keystore..."
+            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
           if [ -f ".env.example" ] && [ ! -f ".env" ]; then
             cp .env.example .env
@@ -56,11 +66,12 @@ jobs:
 
       - name: Create Automatic Release (1-Click APK Download)
         uses: softprops/action-gh-release@v2
+        continue-on-error: true
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
         with:
-          tag_name: latest-build
-          name: "Latest Android APK Build"
-          body: "🚀 Latest Android APK is built and ready for direct download."
+          tag_name: "v1.0.${{ github.run_number }}"
+          name: "Android APK Release v1.0.${{ github.run_number }}"
+          body: "🚀 Your Android APK is successfully built and ready to install on your phone."
           files: release_apk/App-Debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
