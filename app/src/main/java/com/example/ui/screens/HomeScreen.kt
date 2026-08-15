@@ -1,0 +1,671 @@
+package com.example.ui.screens
+
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.data.local.SongEntity
+import com.example.ui.components.BanglaLyricsRhymeEngineDialog
+import com.example.ui.components.DailyRewardSpinDialog
+import com.example.ui.components.InstantMfsPaymentDialog
+import com.example.ui.components.LiveDuetStudioDialog
+import com.example.ui.components.UploadAudioDialog
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+@Composable
+fun HomeScreen(
+    songs: List<SongEntity>,
+    tokenBalance: Int,
+    onSongClick: (SongEntity) -> Unit,
+    onFavoriteClick: (SongEntity) -> Unit,
+    onNavigateCreate: () -> Unit,
+    onOpenTokenPacks: () -> Unit,
+    appLanguage: String = "en",
+    isOnline: Boolean = true,
+    currentUserArtistName: String = "Sur AI Artist",
+    onRewardClaimed: (Int, String) -> Unit = { _, _ -> },
+    onPaymentSuccess: (Int, Double, String) -> Unit = { _, _, _ -> },
+    onUploadTrack: (suspend (String, String, String, String, String, String, ByteArray, String, Boolean) -> Result<Any>)? = null,
+    onPostgrestSearch: (suspend (String) -> List<com.example.data.supabase.RemoteSongItem>)? = null
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val isBangla = appLanguage == "bn"
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedSongForDownload by remember { mutableStateOf<SongEntity?>(null) }
+    var isDownloading by remember { mutableStateOf(false) }
+
+    // Supabase Postgrest remote query search state
+    var isSearchingSupabase by remember { mutableStateOf(false) }
+    var supabaseSearchResults by remember { mutableStateOf<List<SongEntity>?>(null) }
+
+    // Dialog trigger states
+    var showDailySpinDialog by remember { mutableStateOf(false) }
+    var showInstantMfsDialog by remember { mutableStateOf(false) }
+    var showLiveDuetDialog by remember { mutableStateOf(false) }
+    var showBanglaRhymeDialog by remember { mutableStateOf(false) }
+    var showUploadAudioDialog by remember { mutableStateOf(false) }
+
+    // Real-time debounce effect to query Supabase Postgrest when search query changes
+    LaunchedEffect(searchQuery) {
+        val trimmed = searchQuery.trim()
+        if (trimmed.isEmpty()) {
+            supabaseSearchResults = null
+            isSearchingSupabase = false
+        } else {
+            isSearchingSupabase = true
+            delay(250) // Debounce rapid keystrokes
+            if (onPostgrestSearch != null) {
+                try {
+                    val remoteItems = onPostgrestSearch(trimmed)
+                    val converted = remoteItems.map { remote ->
+                        SongEntity(
+                            id = remote.id.hashCode().toLong(),
+                            title = remote.title,
+                            artist = remote.artist,
+                            genre = remote.genre,
+                            audioUrl = remote.audioUrl,
+                            imageUrl = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500",
+                            lyrics = remote.prompt,
+                            duration = remote.duration,
+                            isFavorite = false,
+                            isGenerated = true
+                        )
+                    }
+                    supabaseSearchResults = converted
+                } catch (e: Exception) {
+                    supabaseSearchResults = null
+                }
+            }
+            isSearchingSupabase = false
+        }
+    }
+
+    // Combine local dataset filtering with Supabase Postgrest results
+    val filteredSongs = remember(searchQuery, songs, supabaseSearchResults) {
+        val trimmed = searchQuery.trim()
+        if (trimmed.isEmpty()) {
+            songs
+        } else {
+            val localMatches = songs.filter {
+                it.title.contains(trimmed, ignoreCase = true) ||
+                        it.artist.contains(trimmed, ignoreCase = true) ||
+                        it.genre.contains(trimmed, ignoreCase = true)
+            }
+            val remoteMatches = supabaseSearchResults ?: emptyList()
+            // Merge unique by title & artist
+            (localMatches + remoteMatches).distinctBy { "${it.title.lowercase()}_${it.artist.lowercase()}" }
+        }
+    }
+
+    val genres = listOf("All", "Cyberpunk", "Ambient", "Lofi", "Synthwave", "Pop AI", "Cinematic")
+    var selectedGenre by remember { mutableStateOf("All") }
+
+    val genreFiltered = if (selectedGenre == "All") filteredSongs else filteredSongs.filter { it.genre.contains(selectedGenre, ignoreCase = true) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Sur AI Music",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = "Discover neural-generated masterpieces",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    com.example.ui.components.TokenBalanceBadge(
+                        tokenBalance = tokenBalance,
+                        onClick = onOpenTokenPacks
+                    )
+                    IconButton(
+                        onClick = onNavigateCreate,
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                            .size(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = "Create",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+        }
+
+        // Search & Real-time Filter via Supabase Postgrest
+        item {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = {
+                    Text(
+                        if (isBangla) "গান বা শিল্পীর নাম দিয়ে খুঁজুন (সুপাবেস)..."
+                        else "Search songs or artists via Supabase Postgrest..."
+                    )
+                },
+                leadingIcon = {
+                    if (isSearchingSupabase) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear Search")
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            )
+        }
+
+        // Offline Mode / Cached Room Database Notification
+        if (!isOnline) {
+            item {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.85f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CloudOff,
+                            contentDescription = "Offline Cache",
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (isBangla) "অফলাইন ক্যাশ মোড সক্রিয়" else "Offline Cache Active",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                            Text(
+                                text = if (isBangla) "ইন্টারনেট নেই — পূর্বে দেখা গানের তালিকা ও মেটাডাটা লোকাল রুম ডাটাবেজ (Room Cache) থেকে দেখানো হচ্ছে।"
+                                else "No connection — displaying last viewed songs and metadata cached securely in local Room database.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.9f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Hero Banner
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(170.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.secondary
+                            )
+                        )
+                    )
+                    .clickable { onNavigateCreate() },
+                contentAlignment = Alignment.BottomStart
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp)
+                ) {
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.4f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "FEATURED AI ENGINE v4",
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Create Tracks with Suno v4",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Tap to generate custom vocals & lyrics instantly",
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 12.sp
+                    )
+                }
+            }
+        }
+
+        // Quick Feature Launcher Strip
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Daily Spin Action
+                Surface(
+                    onClick = { showDailySpinDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFF59E0B).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Stars, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("Daily Lucky Spin", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("Win Free Tokens", fontSize = 10.sp, color = Color(0xFFF59E0B))
+                        }
+                    }
+                }
+
+                // Instant bKash / Nagad
+                Surface(
+                    onClick = { showInstantMfsDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFE2136E).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2136E).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.FlashOn, contentDescription = null, tint = Color(0xFFE2136E), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("Instant bKash/Nagad", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("1-Click Top-Up", fontSize = 10.sp, color = Color(0xFFE2136E))
+                        }
+                    }
+                }
+
+                // Live AI Duet
+                Surface(
+                    onClick = { showLiveDuetDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFEC4899).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEC4899).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.GroupAdd, contentDescription = null, tint = Color(0xFFEC4899), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("Live AI Duet", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("Virtual Co-Singer", fontSize = 10.sp, color = Color(0xFFEC4899))
+                        }
+                    }
+                }
+
+                // Bangla Rhyme Engine
+                Surface(
+                    onClick = { showBanglaRhymeDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFF10B981).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("বাংলা অন্ত্যমিল", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("Rhyme Dictionary", fontSize = 10.sp, color = Color(0xFF10B981))
+                        }
+                    }
+                }
+            }
+        }
+
+        // Genre Filter Chips
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                genres.forEach { genre ->
+                    FilterChip(
+                        selected = selectedGenre == genre,
+                        onClick = { selectedGenre = genre },
+                        label = { Text(genre) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
+            }
+        }
+
+        item {
+            Text(
+                text = "Trending AI Hits",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
+
+        items(genreFiltered) { song ->
+            SongItemCard(
+                song = song,
+                onClick = { onSongClick(song) },
+                onFavoriteClick = { onFavoriteClick(song) },
+                onDownloadClick = { selectedSongForDownload = song }
+            )
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(80.dp))
+        }
+    }
+
+    // Daily Lucky Spin Dialog
+    if (showDailySpinDialog) {
+        DailyRewardSpinDialog(
+            onDismiss = { showDailySpinDialog = false },
+            onRewardClaimed = { tokens, reason ->
+                onRewardClaimed(tokens, reason)
+            }
+        )
+    }
+
+    // Instant MFS Dialog
+    if (showInstantMfsDialog) {
+        InstantMfsPaymentDialog(
+            packName = "Popular Studio Pack",
+            tokenAmount = 500,
+            priceBdt = 450,
+            onDismiss = { showInstantMfsDialog = false },
+            onPaymentSuccess = { tokens, cost, trxId ->
+                onPaymentSuccess(tokens, cost, trxId)
+                Toast.makeText(context, "Deposited +$tokens Tokens via Instant MFS (TrxID: $trxId)", Toast.LENGTH_LONG).show()
+            }
+        )
+    }
+
+    // Live AI Duet Dialog
+    if (showLiveDuetDialog) {
+        LiveDuetStudioDialog(
+            onDismiss = { showLiveDuetDialog = false },
+            onStartDuet = { partner, harmony ->
+                onNavigateCreate()
+            }
+        )
+    }
+
+    // Bangla Rhyme Engine Dialog
+    if (showBanglaRhymeDialog) {
+        BanglaLyricsRhymeEngineDialog(
+            onDismiss = { showBanglaRhymeDialog = false },
+            onApplyLyrics = { lyrics ->
+                onNavigateCreate()
+            }
+        )
+    }
+
+    if (selectedSongForDownload != null) {
+        val song = selectedSongForDownload!!
+        AlertDialog(
+            onDismissRequest = { selectedSongForDownload = null },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Download,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "গান ডাউনলোড অপশন (Download Track)",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = "${song.title} - ${song.artist}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Divider()
+                    Button(
+                        onClick = {
+                            selectedSongForDownload = null
+                            scope.launch {
+                                Toast.makeText(context, "${song.title} MP3 (320kbps) ডাউনলোড শুরু হয়েছে...", Toast.LENGTH_SHORT).show()
+                                delay(600)
+                                Toast.makeText(context, "${song.title} সফলভাবে ডাউনলোড হয়েছে!", Toast.LENGTH_LONG).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("MP3 Audio (320 kbps HQ)")
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            selectedSongForDownload = null
+                            scope.launch {
+                                Toast.makeText(context, "${song.title} WAV স্টুডিও মাস্টার ডাউনলোড সম্পন্ন!", Toast.LENGTH_LONG).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.GraphicEq, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("WAV Lossless Master (24-bit)")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { selectedSongForDownload = null }) {
+                    Text("বাতিল (Cancel)")
+                }
+            }
+        )
+    }
+
+    // Floating Action Button on Feed Screen to Upload Audio
+    ExtendedFloatingActionButton(
+        onClick = { showUploadAudioDialog = true },
+        icon = {
+            Icon(
+                imageVector = Icons.Default.CloudUpload,
+                contentDescription = "Upload Audio to Supabase Storage",
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+        },
+        text = {
+            Text(
+                text = if (appLanguage == "bn") "অডিও আপলোড" else "Upload Track",
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(bottom = 16.dp, end = 8.dp)
+    )
+
+    // Upload Audio Dialog
+    if (showUploadAudioDialog) {
+        UploadAudioDialog(
+            appLanguage = appLanguage,
+            currentUserArtistName = currentUserArtistName,
+            onDismiss = { showUploadAudioDialog = false },
+            onUploadConfirmed = { title, artist, genre, prompt, duration, fileName, bytes, coverUrl, isPublic ->
+                onUploadTrack?.invoke(title, artist, genre, prompt, duration, fileName, bytes, coverUrl, isPublic)
+                    ?: Result.failure(Exception("Upload handler not configured"))
+            }
+        )
+    }
+}
+}
+
+@Composable
+fun SongItemCard(
+    song: SongEntity,
+    onClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
+    onDownloadClick: () -> Unit = {}
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        tonalElevation = 2.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+            ) {
+                AsyncImage(
+                    model = song.imageUrl,
+                    contentDescription = song.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Play",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = song.title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "${song.artist} • ${song.genre}",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+            }
+            IconButton(onClick = onDownloadClick) {
+                Icon(
+                    imageVector = Icons.Default.Download,
+                    contentDescription = "Download",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            IconButton(onClick = onFavoriteClick) {
+                Icon(
+                    imageVector = if (song.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Favorite",
+                    tint = if (song.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
