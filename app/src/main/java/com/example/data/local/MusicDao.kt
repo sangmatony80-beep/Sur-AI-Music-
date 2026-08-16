@@ -43,4 +43,7 @@ interface MusicDao {
 
     @Query("DELETE FROM songs WHERE id = :songId")
     suspend fun deleteSong(songId: Long)
+
+    @Query("DELETE FROM songs")
+    suspend fun clearAllSongs()
 }

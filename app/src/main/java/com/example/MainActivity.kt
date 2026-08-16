@@ -89,6 +89,7 @@ fun SurMusicApp(viewModel: MainViewModel) {
 
     var showFullscreenPlayer by remember { mutableStateOf(false) }
     var showTokenDialog by remember { mutableStateOf(false) }
+    val showGoProDialog by viewModel.showGoProDialog.collectAsStateWithLifecycle()
 
     val activePlanTitle = activeSubscription?.planId?.uppercase() ?: "FREE PLAN"
 
@@ -625,6 +626,15 @@ fun SurMusicApp(viewModel: MainViewModel) {
                         onDismiss = { showTokenDialog = false },
                         onBuyTokens = { tokens, cost, desc -> viewModel.buyTokens(tokens, cost, desc) },
                         onGiftTokens = { recipient, tokens, desc -> viewModel.giftTokens(recipient, tokens, desc) }
+                    )
+                }
+
+                if (showGoProDialog) {
+                    com.example.ui.components.GoProDialog(
+                        isBangla = (appLanguage == "bn"),
+                        onDismiss = { viewModel.setShowGoProDialog(false) },
+                        onUpgradeClick = { currentScreen = "pricing" },
+                        onTopUpClick = { showTokenDialog = true }
                     )
                 }
             }

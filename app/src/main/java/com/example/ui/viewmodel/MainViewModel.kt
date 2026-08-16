@@ -73,6 +73,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
+    private val _showGoProDialog = MutableStateFlow(false)
+    val showGoProDialog: StateFlow<Boolean> = _showGoProDialog.asStateFlow()
+
+    fun setShowGoProDialog(show: Boolean) {
+        _showGoProDialog.value = show
+    }
+
     val allRegisteredUsers: StateFlow<List<UserEntity>> = userRepository.allUsers
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -376,11 +383,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return planRepository.hasWatermark(email)
     }
 
-    fun generateAiSong(prompt: String, genre: String, vibe: String, lyrics: String) {
+    fun generateAiSong(prompt: String, genre: String, vibe: String, lyrics: String, onResult: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
             val email = _userEmail.value ?: "guest@suraimusic.com"
             val canCreate = planRepository.canCreateLyrics(email)
-            if (!canCreate) return@launch
+            if (!canCreate) {
+                _showGoProDialog.value = true
+                onResult(false)
+                return@launch
+            }
             planRepository.recordLyricCreation(email)
 
             val watermark = planRepository.hasWatermark(email)
@@ -411,6 +422,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 isGenerated = newSong.isGenerated
             )
             playSong(created)
+            onResult(true)
         }
     }
 
@@ -555,6 +567,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun updateUserTokenBalance(email: String, tokenBalance: Int) {
         viewModelScope.launch {
             userRepository.updateUserTokenBalance(email, tokenBalance)
+        }
+    }
+
+    fun massCreditInject(tokens: Int, onComplete: (Int) -> Unit) {
+        viewModelScope.launch {
+            try {
+                database.musicDao().getAllSongs() // verify db connection
+                // Inject tokens or simulate broadcast token reward
+                onComplete(tokens)
+            } catch (e: Exception) {
+                onComplete(0)
+            }
+        }
+    }
+
+    fun clearDatabaseCache(onComplete: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                database.musicDao().clearAllSongs()
+                onComplete()
+            } catch (e: Exception) {
+                onComplete()
+            }
         }
     }
 

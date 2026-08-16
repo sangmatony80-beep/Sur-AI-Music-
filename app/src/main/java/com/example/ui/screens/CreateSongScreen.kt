@@ -123,6 +123,8 @@ fun CreateSongScreen(
     // Core Feature 7 & 6: Suno v4 AI Music Generator & MP3 Export
     var isGeneratingSong by remember { mutableStateOf(false) }
     var generationStepText by remember { mutableStateOf("") }
+    var useExternalSunoApi by remember { mutableStateOf(false) }
+    var externalSunoApiKey by remember { mutableStateOf("") }
 
     // Core Feature 10: Voice Cloning
     var cloneName by remember { mutableStateOf("") }
@@ -520,6 +522,53 @@ fun CreateSongScreen(
                                                     )
                                                 }
                                             }
+                                        }
+                                    }
+                                }
+                            }
+
+                            item {
+                                Card(
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column {
+                                                Text("SurSun v4 & Suno Engine", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                                Text("Native AI Music & Voice Generation", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text("External Suno API", style = MaterialTheme.typography.bodySmall)
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Switch(
+                                                    checked = useExternalSunoApi,
+                                                    onCheckedChange = { useExternalSunoApi = it },
+                                                    modifier = Modifier.height(24.dp)
+                                                )
+                                            }
+                                        }
+                                        if (useExternalSunoApi) {
+                                            OutlinedTextField(
+                                                value = externalSunoApiKey,
+                                                onValueChange = { externalSunoApiKey = it },
+                                                label = { Text("Suno AI API Key (Optional)") },
+                                                placeholder = { Text("sk-suno-...") },
+                                                singleLine = true,
+                                                shape = RoundedCornerShape(10.dp),
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "🟢 SurSun v4 Native AI Engine active. Generates studio-grade vocals, melodies & 320kbps masters directly inside Sur AI Music.",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         }
                                     }
                                 }

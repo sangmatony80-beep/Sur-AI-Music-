@@ -254,6 +254,57 @@ fun HomeScreen(
             }
         }
 
+        // Trial & Token Limit Banner for Free Users
+        item {
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(
+                                Icons.Default.WorkspacePremium,
+                                contentDescription = "Trial Limit",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = if (isBangla) "🌟 ফ্রি ট্রায়াল ও টোকেন লিমিট" else "🌟 Free Trial & Token Limit",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        Text(
+                            text = if (isBangla) 
+                                "ফ্রি ইউজারদের জন্য প্রতিদিন সীমিত টোকেন ও এআই জেনারেশন প্রযোজ্য। সীমাহীন জেনারেশনের জন্য প্রো তে যান।"
+                                else "Free users have daily generation & token limits. Top up or upgrade for unlimited access.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = onOpenTokenPacks,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text(if (isBangla) "টপ-আপ" else "Top Up", fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+
         // Hero Banner
         item {
             Box(

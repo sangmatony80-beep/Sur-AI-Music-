@@ -96,18 +96,27 @@ fun PlayerScreen(
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Row {
+                        IconButton(onClick = {
+                            val sendIntent = android.content.Intent().apply {
+                                action = android.content.Intent.ACTION_SEND
+                                putExtra(android.content.Intent.EXTRA_SUBJECT, "Check out this song: ${song.title}")
+                                putExtra(android.content.Intent.EXTRA_TEXT, "Listen to \"${song.title}\" by ${song.artist} (${song.genre}) generated on SurSun AI Music Studio!\n\nAudio Stream: ${song.audioUrl}")
+                                type = "text/plain"
+                            }
+                            val shareIntent = android.content.Intent.createChooser(sendIntent, "Share Track via")
+                            context.startActivity(shareIntent)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share Track",
+                                tint = Color(0xFFEC4899)
+                            )
+                        }
                         IconButton(onClick = { showRingtoneDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.ContentCut,
                                 contentDescription = "Ringtone Maker",
                                 tint = Color(0xFFF59E0B)
-                            )
-                        }
-                        IconButton(onClick = { showStoryDialog = true }) {
-                            Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = "Social Story Export",
-                                tint = Color(0xFFEC4899)
                             )
                         }
                         IconButton(onClick = { showStemDialog = true }) {

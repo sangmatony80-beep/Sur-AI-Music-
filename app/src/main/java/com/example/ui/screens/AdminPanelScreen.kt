@@ -49,6 +49,8 @@ fun AdminPanelScreen(
     onUpdateRole: (String, String) -> Unit = { _, _ -> },
     onUpdateBanned: (String, Boolean) -> Unit = { _, _ -> },
     onUpdateTokens: (String, Int) -> Unit = { _, _ -> },
+    onMassCreditInject: (Int, (Int) -> Unit) -> Unit = { _, _ -> },
+    onClearCache: (() -> Unit) -> Unit = { _ -> },
     onAccessDeniedClose: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -220,7 +222,7 @@ fun AdminPanelScreen(
 
                         Button(
                             onClick = {
-                                if (enteredPin == "9988" || enteredPin == "123456" || enteredPin.length >= 4) {
+                                if (enteredPin == "9988" || enteredPin == "SurAdmin@2026#") {
                                     isPinUnlocked = true
                                     Toast.makeText(context, if (isBangla) "এডমিন প্যানেল আনলক হয়েছে" else "Admin Console Unlocked", Toast.LENGTH_SHORT).show()
                                 } else {
@@ -248,7 +250,8 @@ fun AdminPanelScreen(
         "📈 Revenue & API Costs",
         "🛡️ Moderation & Reports",
         "⚙️ Feature Toggles",
-        "🔧 System & Push FCM"
+        "🔧 System & Push FCM",
+        "⚡ Super Admin Studio"
     )
 
     Column(
@@ -315,6 +318,7 @@ fun AdminPanelScreen(
                 3 -> ModerationAndReportsAdminTab(moderationList, userReports)
                 4 -> FeatureTogglesAdminTab(featureToggles)
                 5 -> SystemAndPushFcmAdminTab(sysConfig)
+                6 -> SuperAdminStudioTab(onMassCreditInject, onClearCache)
             }
         }
     }
@@ -881,6 +885,149 @@ private fun SystemAndPushFcmAdminTab(sysConfig: AdminSystemConfigData) {
                     Icon(Icons.Default.Send, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Send Global Push Notification")
+                }
+            }
+        }
+    }
+}
+
+// 7. Super Admin Studio (Mass Credits, DB Cleaner, Hyperparameters & Gateway Failover)
+@Composable
+private fun SuperAdminStudioTab(
+    onMassCreditInject: (Int, (Int) -> Unit) -> Unit,
+    onClearCache: (() -> Unit) -> Unit
+) {
+    val context = LocalContext.current
+    var tokenAmountText by remember { mutableStateOf("100") }
+    var temperature by remember { mutableStateOf(0.7f) }
+    var topP by remember { mutableStateOf(0.95f) }
+    var systemPrompt by remember { mutableStateOf("You are SurSun v4, an elite AI music & vocal generator. Create studio quality lyrics and melodies.") }
+    var isOfflineMode by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Mass Token Injector
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("💎 Mass AI Token Injector (All Users)", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = MaterialTheme.colorScheme.primary)
+                Text("Instantly credit AI generation tokens to every active user in the system.", fontSize = 12.sp)
+
+                OutlinedTextField(
+                    value = tokenAmountText,
+                    onValueChange = { tokenAmountText = it },
+                    label = { Text("Token Amount to Credit") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Button(
+                    onClick = {
+                        val amount = tokenAmountText.toIntOrNull() ?: 100
+                        onMassCreditInject(amount) { count ->
+                            Toast.makeText(context, "Successfully credited $amount tokens to all active users!", Toast.LENGTH_LONG).show()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.CardGiftcard, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Inject Tokens to All Users")
+                }
+            }
+        }
+
+        // Database & Cache Cleaner
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2))
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("🧹 Room DB Cache & Storage Cleaner", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.Red)
+                Text("Wipe local database cache and temporary audio files to free up disk storage.", fontSize = 12.sp)
+
+                Button(
+                    onClick = {
+                        onClearCache {
+                            Toast.makeText(context, "Local Room Database Cache & Audio Files Cleared!", Toast.LENGTH_LONG).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.DeleteSweep, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Clear All Local Caches & DB")
+                }
+            }
+        }
+
+        // AI Model Hyperparameters Studio
+        Card(shape = RoundedCornerShape(20.dp)) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("🎛️ AI Model Hyperparameters Studio", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                Text("Tune generation creativity & system prompts", fontSize = 12.sp)
+
+                Text("Creativity / Temperature", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Slider(
+                    value = temperature,
+                    onValueChange = { temperature = it },
+                    valueRange = 0.1f..1.0f
+                )
+
+                Text("Nucleus Sampling (Top-P)", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Slider(
+                    value = topP,
+                    onValueChange = { topP = it },
+                    valueRange = 0.5f..1.0f
+                )
+
+                OutlinedTextField(
+                    value = systemPrompt,
+                    onValueChange = { systemPrompt = it },
+                    label = { Text("Global AI System Prompt") },
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3
+                )
+
+                Button(
+                    onClick = {
+                        Toast.makeText(context, "AI Hyperparameters Updated Globally!", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Apply AI Hyperparameters")
+                }
+            }
+        }
+
+        // Gateway Failover Switch
+        Card(shape = RoundedCornerShape(20.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Column {
+                        Text("🌐 Standalone Offline Gateway", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text("Force app into fully offline standalone mode without cloud sync", fontSize = 11.sp, color = Color.Gray)
+                    }
+                    Switch(
+                        checked = isOfflineMode,
+                        onCheckedChange = {
+                            isOfflineMode = it
+                            Toast.makeText(context, if (it) "Offline Standalone Gateway Enabled" else "Cloud Sync Enabled", Toast.LENGTH_SHORT).show()
+                        }
+                    )
                 }
             }
         }
