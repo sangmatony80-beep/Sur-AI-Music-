@@ -1,0 +1,2 @@
+Triggering CI rerun to rebuild APK after Gradle wrapper update.
+Timestamp: 2026-08-16T04:30:00Z
