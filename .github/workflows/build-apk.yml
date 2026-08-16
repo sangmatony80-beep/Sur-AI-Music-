@@ -50,14 +50,14 @@ jobs:
           echo "d56f5187479451eabf01fb78af6dfcb131964887" >> $ANDROID_HOME/licenses/android-sdk-license
           echo "84831b9409646a918e30573bab4c9c91346d8abd" > $ANDROID_HOME/licenses/android-sdk-preview-license
 
-      - name: Setup Gradle 8.12
+      - name: Setup Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.12'
+          gradle-version: '9.3.1'
 
       - name: Generate Gradle Wrapper and Build APK
         run: |
-          gradle wrapper --gradle-version 8.12
+          gradle wrapper --gradle-version 9.3.1
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
 
