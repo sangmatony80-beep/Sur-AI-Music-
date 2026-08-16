@@ -64,6 +64,16 @@ data class LoopTrack(
     var volume: Float = 0.8f
 )
 
+data class AiVoiceModel(
+    val name: String,
+    val gender: String, // "Female", "Male", "Special"
+    val genderIcon: String, // "♀", "♂", "✨"
+    val vocalStyle: String,
+    val languageRegion: String,
+    val description: String,
+    val recommendedGenre: String
+)
+
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CreateSongScreen(
@@ -101,16 +111,18 @@ fun CreateSongScreen(
     var secondaryGenre by remember { mutableStateOf("EDM") }
     var isDualGenreEnabled by remember { mutableStateOf(true) }
 
-    // Vibe & Atmosphere
-    var selectedVibe by remember { mutableStateOf("Energetic & Uplifting") }
+    // Vibe & Atmosphere (Mood Selector)
+    var selectedVibe by remember { mutableStateOf("Chill") }
 
     // Core Feature 3 & 4: Lyrics Editor & Copyright
     var customLyrics by remember { mutableStateOf("") }
     var isCheckingCopyright by remember { mutableStateOf(false) }
     var copyrightStatus by remember { mutableStateOf<Boolean?>(null) }
 
-    // Core Feature 5 & 11: AI Singer Voice TTS & Duet Mode
+    // Core Feature 5 & 11: AI Singer Voice TTS & Duet Mode (Male/Female/Special)
     var selectedVoice by remember { mutableStateOf("Aria (Warm Soprano)") }
+    var selectedVoiceGenderFilter by remember { mutableStateOf("All") } // "All", "Female", "Male", "Special"
+    var selectedDuetGenderFilter by remember { mutableStateOf("All") }
     var voiceMood by remember { mutableStateOf("Energetic") }
     var voiceSpeed by remember { mutableFloatStateOf(1.0f) }
     var isDuetModeEnabled by remember { mutableStateOf(false) }
@@ -235,13 +247,45 @@ fun CreateSongScreen(
         "Synthwave", "Afrobeats", "Bhangra", "Sufi", "Ghazal", "Techno", "House", "Dubstep", "Acoustic", "Cinematic"
     )
 
-    val voices = listOf(
-        "Aria (Warm Soprano)", "Zayn (Soulful Tenor)", "Ruhan (Folk Bard)", "Maya (Ethereal Alto)",
-        "CyberVoice X-9", "Luna (Pop Star)", "Kavya (Classical)", "Dev (Deep Baritone)",
-        "Nusrat (Qawwali Soul)", "Zara (R&B Velvet)", "Suno AI v4 Prime", "Echo 7"
-    )
+    val aiVoiceModels = listOf(
+        // FEMALE VOICES (মহিলা এআই কণ্ঠ)
+        AiVoiceModel("Aria (Warm Soprano)", "Female", "♀", "Warm Soprano", "Bangla & English", "Soft, melodic & emotional vocal tone", "Pop, Acoustic, Romantic"),
+        AiVoiceModel("Maya (Ethereal Alto)", "Female", "♀", "Ethereal Alto", "Global / Indie", "Deep, moody & indie resonance", "Lo-Fi, Indie, Melancholic"),
+        AiVoiceModel("Luna (Pop Diva)", "Female", "♀", "Bright Belter", "English & Dance", "Energetic, powerful radio-ready pop voice", "EDM, Dance, Upbeat Pop"),
+        AiVoiceModel("Shreya (Semi-Classical)", "Female", "♀", "Classical Melodic", "Bangla & Hindi", "Intricate vocal runs, sweet romantic warmth", "Ghazal, Classical, Cinema"),
+        AiVoiceModel("Ananya (Baul & Folk)", "Female", "♀", "Earthy Folk Soprano", "Bengali Traditional", "Authentic rural acoustic & soul-stirring melodies", "Baul, Folk, Sufi"),
+        AiVoiceModel("Zara (Velvet R&B)", "Female", "♀", "Velvet Contralto", "Global Western", "Silky, smooth grooves & late-night jazz", "R&B, Soul, Smooth Jazz"),
+        AiVoiceModel("Scarlett (Cyber Synth)", "Female", "♀", "Hyperpop Vocoder", "Futuristic", "Crisp auto-tuned synthwave electronic voice", "Cyberpunk, Synthwave, Techno"),
+        AiVoiceModel("Kavya (Devotional & Sufi)", "Female", "♀", "Serene Soprano", "Sufi & Devotional", "Spiritual, calm & meditative vocal aura", "Sufi, Devotional, Ambient"),
 
-    val vibes = listOf("Energetic & Uplifting", "Melancholic & Deep", "Dark & Cyberpunk", "Smooth & Relaxed", "Romantic & Soft", "Epic & Cinematic")
+        // MALE VOICES (পুরুষ এআই কণ্ঠ)
+        AiVoiceModel("Zayn (Soulful Tenor)", "Male", "♂", "Soulful Tenor", "Bangla & English", "Dynamic, modern pop & acoustic warmth", "Pop, R&B, Ballads"),
+        AiVoiceModel("Ruhan (Folk Bard)", "Male", "♂", "Raw Baul Tenor", "Bengali Traditional", "Rustic, authentic folk energy & Ektara depth", "Baul, Bengali Folk, Rock"),
+        AiVoiceModel("Dev (Deep Baritone)", "Male", "♂", "Deep Baritone", "Global & Bangla", "Heavy bass tone, cinematic narration & punch", "Rock, Metal, Cinematic"),
+        AiVoiceModel("Nusrat (Qawwali Soul)", "Male", "♂", "Sufi High Tenor", "Sufi & Ghazal", "Powerful spiritual crescendo & high octave reach", "Qawwali, Sufi, Devotional"),
+        AiVoiceModel("Kabir (Ghazal Maestro)", "Male", "♂", "Warm Classical Baritone", "Urdu / Hindi / Bangla", "Rich vibrato, poetic nuance & sentimental depth", "Ghazal, Classical, Nazrul"),
+        AiVoiceModel("Ayan (Hip-Hop Flow)", "Male", "♂", "Rhythmic Rap Flow", "Urban Desi & English", "Fast, punchy syllables & drill/trap attitude", "Hip-Hop, Trap, Drill"),
+        AiVoiceModel("Tanvir (Rock Screamer)", "Male", "♂", "Gritty Rock Lead", "Bengali Rock", "Rasp, edge & stadium rock energy", "Alternative Rock, Grunge, Metal"),
+
+        // SPECIAL / AI HYBRID
+        AiVoiceModel("CyberVoice X-9", "Special", "✨", "Robotic Harmonizer", "AI Synth", "Futuristic vocoder & multi-layered AI chorus", "Techno, House, EDM"),
+        AiVoiceModel("Suno AI v4 Prime", "Special", "✨", "Adaptive Multi-Range", "Multi-Lingual", "Dynamic neural vocal engine matching any prompt style", "All Genres")
+    )
+    val voices = aiVoiceModels.map { it.name }
+
+    val moodOptions = listOf(
+        Triple("Chill", "🌿", "Relaxed & calming vibes for unwinding"),
+        Triple("Upbeat", "⚡", "High energy, groovy & motivational rhythm"),
+        Triple("Cinematic", "🎬", "Epic, dramatic orchestral atmosphere"),
+        Triple("Romantic", "💖", "Soft, acoustic love & heartfelt melodies"),
+        Triple("Melancholic", "🌧️", "Deep, emotional & nostalgic tones"),
+        Triple("Lo-Fi", "☕", "Warm, mellow beats & rainy day study vibes"),
+        Triple("Cyberpunk", "🌆", "Dark, futuristic synthwave & heavy bass"),
+        Triple("Party", "🎉", "Club anthems, EDM drops & festive beats"),
+        Triple("Devotional", "🕊️", "Spiritual, sufi, serene & peaceful"),
+        Triple("Inspiring", "🔥", "Heroic, motivational build-up & power")
+    )
+    val vibes = moodOptions.map { "${it.second} ${it.first}" }
 
     Scaffold(
         topBar = {
@@ -476,21 +520,177 @@ fun CreateSongScreen(
                                 }
                             }
 
+                            // Mood & Vibe Selector Card
                             item {
+                                val currentMoodOption = moodOptions.firstOrNull { it.first == selectedVibe }
                                 Card(
                                     shape = RoundedCornerShape(16.dp),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Column(
+                                        modifier = Modifier.padding(14.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text("ElevenLabs Vocal Studio", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                                    modifier = Modifier.size(28.dp)
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Mood,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                }
+                                                Text(
+                                                    text = "Mood & Vibe Selector",
+                                                    fontWeight = FontWeight.Bold,
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = MaterialTheme.colorScheme.primaryContainer
+                                            ) {
+                                                Text(
+                                                    text = "${currentMoodOption?.second ?: "✨"} $selectedVibe",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                                )
+                                            }
+                                        }
+
+                                        Text(
+                                            text = "Choose the emotional tone & sonic vibe for your AI track:",
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+
+                                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            items(moodOptions) { mood ->
+                                                val isSelected = selectedVibe == mood.first
+                                                FilterChip(
+                                                    selected = isSelected,
+                                                    onClick = { selectedVibe = mood.first },
+                                                    leadingIcon = {
+                                                        Text(text = mood.second, fontSize = 14.sp)
+                                                    },
+                                                    label = {
+                                                        Text(
+                                                            text = mood.first,
+                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                            fontSize = 12.sp
+                                                        )
+                                                    },
+                                                    colors = FilterChipDefaults.filterChipColors(
+                                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                                    )
+                                                )
+                                            }
+                                        }
+
+                                        // Mood description hint box
+                                        currentMoodOption?.let { mood ->
+                                            Surface(
+                                                shape = RoundedCornerShape(10.dp),
+                                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    Text(text = mood.second, fontSize = 16.sp)
+                                                    Text(
+                                                        text = mood.third,
+                                                        fontSize = 11.sp,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        style = MaterialTheme.typography.bodySmall
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            item {
+                                val currentVoiceModel = aiVoiceModels.firstOrNull { it.name == selectedVoice } ?: aiVoiceModels.first()
+                                val filteredVoices = when (selectedVoiceGenderFilter) {
+                                    "Female" -> aiVoiceModels.filter { it.gender == "Female" }
+                                    "Male" -> aiVoiceModels.filter { it.gender == "Male" }
+                                    "Special" -> aiVoiceModels.filter { it.gender == "Special" }
+                                    else -> aiVoiceModels
+                                }
+
+                                Card(
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        // Header
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                                    modifier = Modifier.size(28.dp)
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.RecordVoiceOver,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                }
+                                                Column {
+                                                    Text(
+                                                        text = "AI Vocal Artists (মেল/ফিমেল কণ্ঠ)",
+                                                        fontWeight = FontWeight.Bold,
+                                                        style = MaterialTheme.typography.titleSmall,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Text(
+                                                        text = "ElevenLabs & Neural AI Voice Engine",
+                                                        fontSize = 10.sp,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
+
                                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text("Duet Mode", style = MaterialTheme.typography.bodySmall)
+                                                Text("ডুয়েট মোড", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Switch(
                                                     checked = isDuetModeEnabled,
@@ -500,27 +700,281 @@ fun CreateSongScreen(
                                             }
                                         }
 
-                                        Text("Lead Singer: $selectedVoice", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                        // Gender Filter Tabs for Lead Voice
+                                        Text(
+                                            text = "কণ্ঠের ধরণ নির্বাচন করুন (Gender & Tone):",
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 12.sp
+                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            val filterTabs = listOf(
+                                                "All" to "সব কণ্ঠ (${aiVoiceModels.size})",
+                                                "Female" to "♀ ফিমেল (${aiVoiceModels.count { it.gender == "Female" }})",
+                                                "Male" to "♂ মেল (${aiVoiceModels.count { it.gender == "Male" }})",
+                                                "Special" to "✨ স্পেশাল (${aiVoiceModels.count { it.gender == "Special" }})"
+                                            )
+                                            filterTabs.forEach { (key, label) ->
+                                                val isSelected = selectedVoiceGenderFilter == key
+                                                val tabColor = when (key) {
+                                                    "Female" -> Color(0xFFEC4899)
+                                                    "Male" -> Color(0xFF3B82F6)
+                                                    "Special" -> Color(0xFF8B5CF6)
+                                                    else -> MaterialTheme.colorScheme.primary
+                                                }
+                                                Surface(
+                                                    onClick = { selectedVoiceGenderFilter = key },
+                                                    shape = RoundedCornerShape(10.dp),
+                                                    color = if (isSelected) tabColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                                    border = BorderStroke(1.dp, if (isSelected) tabColor else Color.Transparent),
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Box(
+                                                        modifier = Modifier.padding(vertical = 6.dp),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Text(
+                                                            text = label,
+                                                            fontSize = 10.sp,
+                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                            color = if (isSelected) tabColor else MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        // Active Selected Voice Card Details
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = when (currentVoiceModel.gender) {
+                                                "Female" -> Color(0xFFEC4899).copy(alpha = 0.12f)
+                                                "Male" -> Color(0xFF3B82F6).copy(alpha = 0.12f)
+                                                else -> Color(0xFF8B5CF6).copy(alpha = 0.12f)
+                                            },
+                                            border = BorderStroke(
+                                                1.dp,
+                                                when (currentVoiceModel.gender) {
+                                                    "Female" -> Color(0xFFEC4899).copy(alpha = 0.35f)
+                                                    "Male" -> Color(0xFF3B82F6).copy(alpha = 0.35f)
+                                                    else -> Color(0xFF8B5CF6).copy(alpha = 0.35f)
+                                                }
+                                            ),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(12.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(42.dp)
+                                                        .clip(CircleShape)
+                                                        .background(
+                                                            when (currentVoiceModel.gender) {
+                                                                "Female" -> Color(0xFFEC4899).copy(alpha = 0.25f)
+                                                                "Male" -> Color(0xFF3B82F6).copy(alpha = 0.25f)
+                                                                else -> Color(0xFF8B5CF6).copy(alpha = 0.25f)
+                                                            }
+                                                        ),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        text = currentVoiceModel.genderIcon,
+                                                        fontSize = 20.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = when (currentVoiceModel.gender) {
+                                                            "Female" -> Color(0xFFEC4899)
+                                                            "Male" -> Color(0xFF3B82F6)
+                                                            else -> Color(0xFF8B5CF6)
+                                                        }
+                                                    )
+                                                }
+
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = currentVoiceModel.name,
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 13.sp,
+                                                            color = MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                        Surface(
+                                                            shape = RoundedCornerShape(4.dp),
+                                                            color = when (currentVoiceModel.gender) {
+                                                                "Female" -> Color(0xFFEC4899).copy(alpha = 0.2f)
+                                                                "Male" -> Color(0xFF3B82F6).copy(alpha = 0.2f)
+                                                                else -> Color(0xFF8B5CF6).copy(alpha = 0.2f)
+                                                            }
+                                                        ) {
+                                                            Text(
+                                                                text = if (currentVoiceModel.gender == "Female") "ফিমেল কণ্ঠ" else if (currentVoiceModel.gender == "Male") "মেল কণ্ঠ" else "স্পেশাল",
+                                                                fontSize = 9.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = when (currentVoiceModel.gender) {
+                                                                    "Female" -> Color(0xFFEC4899)
+                                                                    "Male" -> Color(0xFF3B82F6)
+                                                                    else -> Color(0xFF8B5CF6)
+                                                                },
+                                                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                    Text(
+                                                        text = "${currentVoiceModel.vocalStyle} • ${currentVoiceModel.languageRegion}",
+                                                        fontSize = 11.sp,
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                    Text(
+                                                        text = currentVoiceModel.description,
+                                                        fontSize = 10.sp,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        // Lead Singer Voice Chips
+                                        Text(
+                                            text = "মূল গায়ক (Lead Vocalist):",
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 12.sp
+                                        )
                                         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            items(voices) { v ->
+                                            items(filteredVoices) { vm ->
+                                                val isSelected = selectedVoice == vm.name
+                                                val chipColor = when (vm.gender) {
+                                                    "Female" -> Color(0xFFEC4899)
+                                                    "Male" -> Color(0xFF3B82F6)
+                                                    else -> Color(0xFF8B5CF6)
+                                                }
                                                 FilterChip(
-                                                    selected = selectedVoice == v,
-                                                    onClick = { selectedVoice = v },
-                                                    label = { Text(v, fontSize = 12.sp) }
+                                                    selected = isSelected,
+                                                    onClick = { selectedVoice = vm.name },
+                                                    leadingIcon = {
+                                                        Text(vm.genderIcon, fontSize = 12.sp, color = if (isSelected) Color.White else chipColor)
+                                                    },
+                                                    label = {
+                                                        Text(vm.name, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                                                    },
+                                                    colors = FilterChipDefaults.filterChipColors(
+                                                        selectedContainerColor = chipColor,
+                                                        selectedLabelColor = Color.White
+                                                    )
                                                 )
                                             }
                                         }
 
+                                        // Duet Partner Section
                                         if (isDuetModeEnabled) {
-                                            Text("Duet Partner: $duetSecondVoice", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.secondary)
-                                            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                items(voices) { v ->
-                                                    FilterChip(
-                                                        selected = duetSecondVoice == v,
-                                                        onClick = { duetSecondVoice = v },
-                                                        label = { Text(v, fontSize = 12.sp) }
-                                                    )
+                                            val duetModel = aiVoiceModels.firstOrNull { it.name == duetSecondVoice } ?: aiVoiceModels[1]
+                                            val filteredDuetVoices = when (selectedDuetGenderFilter) {
+                                                "Female" -> aiVoiceModels.filter { it.gender == "Female" }
+                                                "Male" -> aiVoiceModels.filter { it.gender == "Male" }
+                                                "Special" -> aiVoiceModels.filter { it.gender == "Special" }
+                                                else -> aiVoiceModels
+                                            }
+
+                                            Surface(
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Text(
+                                                            text = "দ্বৈত পার্টনার (Duet Partner): ${duetModel.genderIcon} ${duetModel.name}",
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 12.sp,
+                                                            color = MaterialTheme.colorScheme.secondary
+                                                        )
+                                                        Surface(
+                                                            shape = RoundedCornerShape(6.dp),
+                                                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
+                                                        ) {
+                                                            Text(
+                                                                text = "${currentVoiceModel.genderIcon} + ${duetModel.genderIcon} ডুয়েট হারমনি",
+                                                                fontSize = 9.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = MaterialTheme.colorScheme.secondary,
+                                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                            )
+                                                        }
+                                                    }
+
+                                                    // Duet gender filter
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        listOf(
+                                                            "All" to "সব কণ্ঠ",
+                                                            "Female" to "♀ ফিমেল",
+                                                            "Male" to "♂ মেল",
+                                                            "Special" to "✨ স্পেশাল"
+                                                        ).forEach { (k, lbl) ->
+                                                            val isSel = selectedDuetGenderFilter == k
+                                                            FilterChip(
+                                                                selected = isSel,
+                                                                onClick = { selectedDuetGenderFilter = k },
+                                                                label = { Text(lbl, fontSize = 10.sp) },
+                                                                modifier = Modifier.height(28.dp)
+                                                            )
+                                                        }
+                                                    }
+
+                                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                        items(filteredDuetVoices) { vm ->
+                                                            val isSel = duetSecondVoice == vm.name
+                                                            FilterChip(
+                                                                selected = isSel,
+                                                                onClick = { duetSecondVoice = vm.name },
+                                                                leadingIcon = { Text(vm.genderIcon, fontSize = 11.sp) },
+                                                                label = { Text(vm.name, fontSize = 11.sp) }
+                                                            )
+                                                        }
+                                                    }
                                                 }
+                                            }
+                                        }
+
+                                        // Vocal Emotion Mood & Speed Tuning
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text("ভোকাল এক্সপ্রেশন ও গতি:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                                            Text("${(voiceSpeed * 100).toInt()}% স্পিড", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                        }
+
+                                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            val emotionOptions = listOf(
+                                                "Energetic" to "🔥 প্রাণবন্ত",
+                                                "Emotional" to "😢 আবেগঘন",
+                                                "Romantic" to "💖 রোমান্টিক",
+                                                "Calm" to "🌿 শান্ত",
+                                                "Sufi Soul" to "🕊️ সুফি ভাব",
+                                                "Aggressive" to "⚡ এনার্জেটিক"
+                                            )
+                                            items(emotionOptions) { (key, label) ->
+                                                val isSel = voiceMood == key
+                                                FilterChip(
+                                                    selected = isSel,
+                                                    onClick = { voiceMood = key },
+                                                    label = { Text(label, fontSize = 11.sp) }
+                                                )
                                             }
                                         }
                                     }

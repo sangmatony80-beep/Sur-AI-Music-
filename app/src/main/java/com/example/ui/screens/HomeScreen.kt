@@ -13,6 +13,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +24,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,12 +32,23 @@ import coil.compose.AsyncImage
 import com.example.data.local.SongEntity
 import com.example.ui.components.BanglaLyricsRhymeEngineDialog
 import com.example.ui.components.DailyRewardSpinDialog
+import com.example.ui.components.EqualizerBottomSheet
+import com.example.ui.components.StemMixerBottomSheet
+import com.example.ui.components.SleepTimerBottomSheet
+import com.example.ui.components.RingtoneTrimmerBottomSheet
+import com.example.ui.components.ReferralEarningDialog
+import com.example.ui.components.WatchAdForCreditsDialog
+import com.example.ui.components.CreatorRoyaltyCashoutDialog
 import com.example.ui.components.InstantMfsPaymentDialog
 import com.example.ui.components.LiveDuetStudioDialog
+import com.example.ui.components.SongItemSkeletonCard
 import com.example.ui.components.UploadAudioDialog
+import com.example.ui.components.rememberShimmerBrush
+import com.example.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     songs: List<SongEntity>,
@@ -44,7 +59,10 @@ fun HomeScreen(
     onOpenTokenPacks: () -> Unit,
     appLanguage: String = "en",
     isOnline: Boolean = true,
+    isFetchingSupabase: Boolean = false,
+    onRefreshFeed: (() -> Unit)? = null,
     currentUserArtistName: String = "Sur AI Artist",
+    viewModel: MainViewModel? = null,
     onRewardClaimed: (Int, String) -> Unit = { _, _ -> },
     onPaymentSuccess: (Int, Double, String) -> Unit = { _, _, _ -> },
     onUploadTrack: (suspend (String, String, String, String, String, String, ByteArray, String, Boolean) -> Result<Any>)? = null,
@@ -56,6 +74,7 @@ fun HomeScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedSongForDownload by remember { mutableStateOf<SongEntity?>(null) }
     var isDownloading by remember { mutableStateOf(false) }
+    val pullToRefreshState = rememberPullToRefreshState()
 
     // Supabase Postgrest remote query search state
     var isSearchingSupabase by remember { mutableStateOf(false) }
@@ -67,6 +86,14 @@ fun HomeScreen(
     var showLiveDuetDialog by remember { mutableStateOf(false) }
     var showBanglaRhymeDialog by remember { mutableStateOf(false) }
     var showUploadAudioDialog by remember { mutableStateOf(false) }
+    var showEqDialog by remember { mutableStateOf(false) }
+    var showStemDialog by remember { mutableStateOf(false) }
+    var showSleepDialog by remember { mutableStateOf(false) }
+    var showTrimmerDialog by remember { mutableStateOf(false) }
+    var trimmerSongTarget by remember { mutableStateOf<SongEntity?>(null) }
+    var showReferralDialog by remember { mutableStateOf(false) }
+    var showWatchAdDialog by remember { mutableStateOf(false) }
+    var showRoyaltyCashoutDialog by remember { mutableStateOf(false) }
 
     // Real-time debounce effect to query Supabase Postgrest when search query changes
     LaunchedEffect(searchQuery) {
@@ -125,7 +152,21 @@ fun HomeScreen(
 
     val genreFiltered = if (selectedGenre == "All") filteredSongs else filteredSongs.filter { it.genre.contains(selectedGenre, ignoreCase = true) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    PullToRefreshBox(
+        isRefreshing = isFetchingSupabase,
+        onRefresh = { onRefreshFeed?.invoke() },
+        modifier = Modifier.fillMaxSize(),
+        state = pullToRefreshState,
+        indicator = {
+            PullToRefreshDefaults.Indicator(
+                state = pullToRefreshState,
+                isRefreshing = isFetchingSupabase,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -441,6 +482,149 @@ fun HomeScreen(
                         }
                     }
                 }
+
+                // Graphic Equalizer & Sound FX
+                Surface(
+                    onClick = { showEqDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFF6366F1).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF6366F1).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Tune, contentDescription = null, tint = Color(0xFF6366F1), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("Graphic Equalizer", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("Bass Boost & FX", fontSize = 10.sp, color = Color(0xFF6366F1))
+                        }
+                    }
+                }
+
+                // 4-Track Stem Mixer & Karaoke Vocal Cut
+                Surface(
+                    onClick = { showStemDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFF8B5CF6).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.GraphicEq, contentDescription = null, tint = Color(0xFF8B5CF6), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("4-Track Stem Mixer", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("Karaoke Vocal Cut", fontSize = 10.sp, color = Color(0xFF8B5CF6))
+                        }
+                    }
+                }
+
+                // Sleep Timer
+                Surface(
+                    onClick = { showSleepDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFF3B82F6).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Bedtime, contentDescription = null, tint = Color(0xFF3B82F6), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("Sleep Timer", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("Auto-Stop Audio", fontSize = 10.sp, color = Color(0xFF3B82F6))
+                        }
+                    }
+                }
+
+                // Ringtone Cutter & Audio Trimmer
+                Surface(
+                    onClick = {
+                        trimmerSongTarget = songs.firstOrNull()
+                        showTrimmerDialog = true
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFF14B8A6).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF14B8A6).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.ContentCut, contentDescription = null, tint = Color(0xFF14B8A6), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("Ringtone Trimmer", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("30s Cut & Export", fontSize = 10.sp, color = Color(0xFF14B8A6))
+                        }
+                    }
+                }
+
+                // Referral & Earn (রেফার করে আয়)
+                Surface(
+                    onClick = { showReferralDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFF10B981).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("রেফারেল ও আয়", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("৳৫০ প্রতি রেফারে", fontSize = 10.sp, color = Color(0xFF10B981))
+                        }
+                    }
+                }
+
+                // Watch Ads for Free Credits (বিজ্ঞাপন দেখে ফ্রি কয়েন)
+                Surface(
+                    onClick = { showWatchAdDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFF59E0B).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.PlayCircle, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("বিজ্ঞাপন দেখে কয়েন", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("+৫ ফ্রি কয়েন", fontSize = 10.sp, color = Color(0xFFF59E0B))
+                        }
+                    }
+                }
+
+                // Creator Royalty Cashout (ক্রিয়েটর ক্যাশআউট)
+                Surface(
+                    onClick = { showRoyaltyCashoutDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFEC4899).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEC4899).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = Color(0xFFEC4899), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("রয়্যালটি ক্যাশআউট", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("বিকাশ/নগদে উইথড্র", fontSize = 10.sp, color = Color(0xFFEC4899))
+                        }
+                    }
+                }
             }
         }
 
@@ -475,13 +659,19 @@ fun HomeScreen(
             )
         }
 
-        items(genreFiltered) { song ->
-            SongItemCard(
-                song = song,
-                onClick = { onSongClick(song) },
-                onFavoriteClick = { onFavoriteClick(song) },
-                onDownloadClick = { selectedSongForDownload = song }
-            )
+        if (isFetchingSupabase || isSearchingSupabase) {
+            items(4) {
+                SongItemSkeletonCard(shimmerBrush = rememberShimmerBrush())
+            }
+        } else {
+            items(genreFiltered) { song ->
+                SongItemCard(
+                    song = song,
+                    onClick = { onSongClick(song) },
+                    onFavoriteClick = { onFavoriteClick(song) },
+                    onDownloadClick = { selectedSongForDownload = song }
+                )
+            }
         }
 
         item {
@@ -530,6 +720,83 @@ fun HomeScreen(
             onApplyLyrics = { lyrics ->
                 onNavigateCreate()
             }
+        )
+    }
+
+    // Audio Tools Bottom Sheets
+    if (showEqDialog && viewModel != null) {
+        EqualizerBottomSheet(
+            viewModel = viewModel,
+            onDismiss = { showEqDialog = false }
+        )
+    }
+
+    if (showStemDialog && viewModel != null) {
+        val targetSong = songs.firstOrNull() ?: SongEntity(
+            title = "Demo AI Track",
+            artist = "Sur AI",
+            genre = "Pop",
+            audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+            imageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500",
+            lyrics = "Demo AI Studio Lyrics",
+            duration = "03:15"
+        )
+        StemMixerBottomSheet(
+            viewModel = viewModel,
+            song = targetSong,
+            onDismiss = { showStemDialog = false }
+        )
+    }
+
+    if (showSleepDialog && viewModel != null) {
+        SleepTimerBottomSheet(
+            viewModel = viewModel,
+            onDismiss = { showSleepDialog = false }
+        )
+    }
+
+    if (showTrimmerDialog) {
+        val targetSong = trimmerSongTarget ?: songs.firstOrNull() ?: SongEntity(
+            title = "Demo AI Track",
+            artist = "Sur AI",
+            genre = "Pop",
+            audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+            imageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500",
+            lyrics = "Demo AI Studio Lyrics",
+            duration = "03:15"
+        )
+        RingtoneTrimmerBottomSheet(
+            song = targetSong,
+            onDismiss = { showTrimmerDialog = false }
+        )
+    }
+
+    if (showReferralDialog) {
+        ReferralEarningDialog(
+            userReferralCode = "SUR-" + (currentUserArtistName.replace(" ", "").take(4).uppercase()) + "77",
+            totalEarnings = 350.0,
+            invitedCount = 7,
+            onDismiss = { showReferralDialog = false }
+        )
+    }
+
+    if (showWatchAdDialog) {
+        WatchAdForCreditsDialog(
+            onRewardEarned = { earnedCoins ->
+                onRewardClaimed(earnedCoins, "বিজ্ঞাপন পুরস্কার")
+            },
+            onDismiss = { showWatchAdDialog = false }
+        )
+    }
+
+    if (showRoyaltyCashoutDialog) {
+        CreatorRoyaltyCashoutDialog(
+            creatorBalance = 1450.0,
+            soldTracksCount = 12,
+            onWithdrawRequested = { amount, method ->
+                // Registered payout
+            },
+            onDismiss = { showRoyaltyCashoutDialog = false }
         )
     }
 

@@ -85,6 +85,7 @@ fun SurMusicApp(viewModel: MainViewModel) {
     // Global Error & Network State
     val globalError by viewModel.globalError.collectAsStateWithLifecycle()
     val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
+    val isFetchingSupabaseFeed by viewModel.isFetchingSupabaseFeed.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var showFullscreenPlayer by remember { mutableStateOf(false) }
@@ -253,7 +254,8 @@ fun SurMusicApp(viewModel: MainViewModel) {
                                     isPlaying = isPlaying,
                                     onPlayPauseClick = { viewModel.togglePlayPause() },
                                     onFavoriteClick = { currentSong?.let { viewModel.toggleFavorite(it) } },
-                                    onOpenPlayer = { showFullscreenPlayer = true }
+                                    onOpenPlayer = { showFullscreenPlayer = true },
+                                    onSkipNext = { viewModel.skipToNext() }
                                 )
                                 BottomNavBar(
                                     currentRoute = when (currentScreen) {
@@ -276,7 +278,10 @@ fun SurMusicApp(viewModel: MainViewModel) {
                                     tokenBalance = tokenBalance,
                                     appLanguage = appLanguage,
                                     isOnline = isOnline,
+                                    isFetchingSupabase = isFetchingSupabaseFeed,
+                                    onRefreshFeed = { viewModel.refreshSupabaseFeed() },
                                     currentUserArtistName = currentUser?.fullName ?: (userEmail?.substringBefore("@") ?: "Sur AI Artist"),
+                                    viewModel = viewModel,
                                     onSongClick = { song -> viewModel.playSong(song) },
                                     onFavoriteClick = { song -> viewModel.toggleFavorite(song) },
                                     onNavigateCreate = { currentScreen = "create_gen" },
@@ -434,7 +439,14 @@ fun SurMusicApp(viewModel: MainViewModel) {
                                     onGenerateStoryboard = { title, lyrics -> viewModel.generateAiStoryboard(title, lyrics) },
                                     onGenerateSubtitles = { lyrics, lang -> viewModel.generateSubtitles(lyrics, lang) }
                                 )
-                                "social_collab", "feed" -> SocialCollabScreen(
+                                "feed", "community_feed" -> FeedScreen(
+                                    songs = songs,
+                                    onSongClick = { song -> viewModel.playSong(song) },
+                                    onFavoriteClick = { song -> viewModel.toggleFavorite(song) },
+                                    isLoading = isFetchingSupabaseFeed,
+                                    onRefresh = { viewModel.refreshSupabaseFeed() }
+                                )
+                                "social_collab" -> SocialCollabScreen(
                                     appLanguage = appLanguage,
                                     posts = viewModel.getTikTokFeedPosts(),
                                     trending = viewModel.getTrendingPageData(),
@@ -616,7 +628,9 @@ fun SurMusicApp(viewModel: MainViewModel) {
                         isPlaying = isPlaying,
                         onPlayPauseClick = { viewModel.togglePlayPause() },
                         onFavoriteClick = { viewModel.toggleFavorite(currentSong!!) },
-                        onClose = { showFullscreenPlayer = false }
+                        onClose = { showFullscreenPlayer = false },
+                        onSkipNext = { viewModel.skipToNext() },
+                        onSkipPrevious = { viewModel.skipToPrevious() }
                     )
                 }
 

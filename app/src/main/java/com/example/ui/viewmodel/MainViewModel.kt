@@ -60,6 +60,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val supabaseRealtimeStatus: StateFlow<String> = supabaseRepository.realtimeStatus
     val isSupabaseConfigured: StateFlow<Boolean> = SupabaseClientProvider.isConfigured
 
+    // Supabase Feed Fetching Loading State for Skeletons
+    private val _isFetchingSupabaseFeed = MutableStateFlow(false)
+    val isFetchingSupabaseFeed: StateFlow<Boolean> = _isFetchingSupabaseFeed.asStateFlow()
+
     // Auth state
     private val _userEmail = MutableStateFlow<String?>(null)
     val userEmail: StateFlow<String?> = _userEmail.asStateFlow()
@@ -148,6 +152,87 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
+
+    // --- Audio Studio & Enhancement States ---
+    val bassBoost = androidx.compose.runtime.mutableStateOf(0.65f)
+    val virtualizer = androidx.compose.runtime.mutableStateOf(0.5f)
+    val eqBands = androidx.compose.runtime.mutableStateOf(floatArrayOf(0.2f, 0.4f, 0.1f, 0.5f, 0.3f))
+    val eqPreset = androidx.compose.runtime.mutableStateOf("Bass Booster")
+
+    // Karaoke & 4-Track Stem Mixer
+    val karaokeModeEnabled = androidx.compose.runtime.mutableStateOf(false)
+    val vocalStemVolume = androidx.compose.runtime.mutableStateOf(1.0f)
+    val drumStemVolume = androidx.compose.runtime.mutableStateOf(1.0f)
+    val bassStemVolume = androidx.compose.runtime.mutableStateOf(1.0f)
+    val synthStemVolume = androidx.compose.runtime.mutableStateOf(1.0f)
+
+    // Sleep Timer
+    val sleepTimerMinutesLeft = androidx.compose.runtime.mutableStateOf(0)
+    val isSleepTimerActive = androidx.compose.runtime.mutableStateOf(false)
+    private var sleepTimerJob: kotlinx.coroutines.Job? = null
+
+    // Followed Creators
+    val followedArtists = androidx.compose.runtime.mutableStateListOf<String>("Suno AI", "Sur Studio", "CyberBeats")
+
+    fun setPreset(preset: String) {
+        eqPreset.value = preset
+        when (preset) {
+            "Bass Booster" -> {
+                bassBoost.value = 0.9f
+                virtualizer.value = 0.4f
+                eqBands.value = floatArrayOf(0.8f, 0.6f, 0.1f, 0.2f, 0.3f)
+            }
+            "Vocal Booster" -> {
+                bassBoost.value = 0.3f
+                virtualizer.value = 0.6f
+                eqBands.value = floatArrayOf(0.1f, 0.3f, 0.8f, 0.9f, 0.5f)
+            }
+            "Lofi Chill" -> {
+                bassBoost.value = 0.7f
+                virtualizer.value = 0.8f
+                eqBands.value = floatArrayOf(0.5f, 0.4f, 0.2f, -0.2f, -0.4f)
+            }
+            "Concert Hall" -> {
+                bassBoost.value = 0.6f
+                virtualizer.value = 1.0f
+                eqBands.value = floatArrayOf(0.4f, 0.5f, 0.3f, 0.6f, 0.7f)
+            }
+            else -> {
+                bassBoost.value = 0.5f
+                virtualizer.value = 0.5f
+                eqBands.value = floatArrayOf(0f, 0f, 0f, 0f, 0f)
+            }
+        }
+    }
+
+    fun startSleepTimer(minutes: Int) {
+        sleepTimerJob?.cancel()
+        if (minutes <= 0) {
+            isSleepTimerActive.value = false
+            sleepTimerMinutesLeft.value = 0
+            return
+        }
+        isSleepTimerActive.value = true
+        sleepTimerMinutesLeft.value = minutes
+        sleepTimerJob = viewModelScope.launch {
+            var remaining = minutes
+            while (remaining > 0) {
+                kotlinx.coroutines.delay(60_000L)
+                remaining--
+                sleepTimerMinutesLeft.value = remaining
+            }
+            isSleepTimerActive.value = false
+            _isPlaying.value = false
+        }
+    }
+
+    fun toggleFollowArtist(artistName: String) {
+        if (followedArtists.contains(artistName)) {
+            followedArtists.remove(artistName)
+        } else {
+            followedArtists.add(artistName)
+        }
+    }
 
     init {
         viewModelScope.launch {
@@ -248,14 +333,44 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun syncCloudSongsToLocalCache() {
         viewModelScope.launch {
-            if (networkMonitor.isCurrentlyConnected()) {
-                val cloudFeed = supabaseRepository.fetchCommunitySongs()
-                if (cloudFeed.isSuccess) {
-                    val songs = cloudFeed.getOrDefault(emptyList())
-                    if (songs.isNotEmpty()) {
-                        repository.cacheRemoteSongs(songs)
+            _isFetchingSupabaseFeed.value = true
+            try {
+                if (networkMonitor.isCurrentlyConnected()) {
+                    val cloudFeed = supabaseRepository.fetchCommunitySongs()
+                    if (cloudFeed.isSuccess) {
+                        val songs = cloudFeed.getOrDefault(emptyList())
+                        if (songs.isNotEmpty()) {
+                            repository.cacheRemoteSongs(songs)
+                        }
                     }
                 }
+            } catch (_: Exception) {
+            } finally {
+                _isFetchingSupabaseFeed.value = false
+            }
+        }
+    }
+
+    /**
+     * Explicitly refreshes the Supabase cloud track feed with skeleton loading state.
+     */
+    fun refreshSupabaseFeed() {
+        viewModelScope.launch {
+            _isFetchingSupabaseFeed.value = true
+            try {
+                kotlinx.coroutines.delay(800L) // Perceived performance shimmer
+                if (networkMonitor.isCurrentlyConnected()) {
+                    val cloudFeed = supabaseRepository.fetchCommunitySongs()
+                    if (cloudFeed.isSuccess) {
+                        val songs = cloudFeed.getOrDefault(emptyList())
+                        if (songs.isNotEmpty()) {
+                            repository.cacheRemoteSongs(songs)
+                        }
+                    }
+                }
+            } catch (_: Exception) {
+            } finally {
+                _isFetchingSupabaseFeed.value = false
             }
         }
     }
@@ -321,6 +436,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun togglePlayPause() {
         _isPlaying.value = !_isPlaying.value
+    }
+
+    fun skipToNext() {
+        val current = _currentSong.value ?: return
+        val songList = allSongs.value
+        if (songList.isEmpty()) return
+        val currentIndex = songList.indexOfFirst { it.id == current.id }
+        val nextIndex = if (currentIndex != -1 && currentIndex < songList.size - 1) currentIndex + 1 else 0
+        playSong(songList[nextIndex])
+    }
+
+    fun skipToPrevious() {
+        val current = _currentSong.value ?: return
+        val songList = allSongs.value
+        if (songList.isEmpty()) return
+        val currentIndex = songList.indexOfFirst { it.id == current.id }
+        val prevIndex = if (currentIndex > 0) currentIndex - 1 else songList.size - 1
+        playSong(songList[prevIndex])
     }
 
     fun toggleFavorite(song: SongEntity) {

@@ -38,7 +38,9 @@ fun PlayerScreen(
     isPlaying: Boolean,
     onPlayPauseClick: () -> Unit,
     onFavoriteClick: () -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onSkipNext: () -> Unit = {},
+    onSkipPrevious: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -223,8 +225,11 @@ fun PlayerScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { }) {
-                        Icon(imageVector = Icons.Default.SkipPrevious, contentDescription = "Previous", modifier = Modifier.size(36.dp), tint = MaterialTheme.colorScheme.onBackground)
+                    IconButton(
+                        onClick = onSkipPrevious,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.SkipPrevious, contentDescription = "Previous Track", modifier = Modifier.size(36.dp), tint = MaterialTheme.colorScheme.onBackground)
                     }
                     FloatingActionButton(
                         onClick = onPlayPauseClick,
@@ -239,8 +244,11 @@ fun PlayerScreen(
                             modifier = Modifier.size(34.dp)
                         )
                     }
-                    IconButton(onClick = { }) {
-                        Icon(imageVector = Icons.Default.SkipNext, contentDescription = "Next", modifier = Modifier.size(36.dp), tint = MaterialTheme.colorScheme.onBackground)
+                    IconButton(
+                        onClick = onSkipNext,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.SkipNext, contentDescription = "Next Track", modifier = Modifier.size(36.dp), tint = MaterialTheme.colorScheme.onBackground)
                     }
                 }
 
