@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -55,7 +56,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SurMusicApp(viewModel: MainViewModel) {
-    var currentScreen by remember { mutableStateOf("splash") }
+    var currentScreen by rememberSaveable { mutableStateOf("splash") }
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
@@ -88,8 +89,14 @@ fun SurMusicApp(viewModel: MainViewModel) {
     val isFetchingSupabaseFeed by viewModel.isFetchingSupabaseFeed.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var showFullscreenPlayer by remember { mutableStateOf(false) }
-    var showTokenDialog by remember { mutableStateOf(false) }
+    // Streaming Audio Playback & Progress state
+    val playbackProgress by viewModel.playbackProgress.collectAsStateWithLifecycle()
+    val playbackDurationSeconds by viewModel.playbackDurationSeconds.collectAsStateWithLifecycle()
+    val isAudioBuffering by viewModel.isAudioBuffering.collectAsStateWithLifecycle()
+    val bufferedProgress by viewModel.bufferedProgress.collectAsStateWithLifecycle()
+
+    var showFullscreenPlayer by rememberSaveable { mutableStateOf(false) }
+    var showTokenDialog by rememberSaveable { mutableStateOf(false) }
     val showGoProDialog by viewModel.showGoProDialog.collectAsStateWithLifecycle()
 
     val activePlanTitle = activeSubscription?.planId?.uppercase() ?: "FREE PLAN"
@@ -114,6 +121,7 @@ fun SurMusicApp(viewModel: MainViewModel) {
                     })
                 }
                 "auth" -> {
+                    val context = androidx.compose.ui.platform.LocalContext.current
                     AuthScreen(
                         onLogin = { email, pass ->
                             val res = viewModel.loginWithCredentials(email, pass)
@@ -133,6 +141,19 @@ fun SurMusicApp(viewModel: MainViewModel) {
                             if (res is com.example.data.repository.AuthResult.Error) {
                                 viewModel.showGlobalError(
                                     title = if (appLanguage == "bn") "রেজিস্ট্রেশন ব্যর্থ হয়েছে" else "Registration Failed",
+                                    message = res.message,
+                                    category = com.example.ui.components.ErrorCategory.AUTHENTICATION,
+                                    severity = com.example.ui.components.ErrorSeverity.ERROR,
+                                    autoDismissMillis = 6000L
+                                )
+                            }
+                            res
+                        },
+                        onGoogleSignIn = {
+                            val res = viewModel.loginWithGoogle(context)
+                            if (res is com.example.data.repository.AuthResult.Error) {
+                                viewModel.showGlobalError(
+                                    title = if (appLanguage == "bn") "গুগল লগইন ব্যর্থ হয়েছে" else "Google Sign-In Failed",
                                     message = res.message,
                                     category = com.example.ui.components.ErrorCategory.AUTHENTICATION,
                                     severity = com.example.ui.components.ErrorSeverity.ERROR,
@@ -192,6 +213,7 @@ fun SurMusicApp(viewModel: MainViewModel) {
                                         "create_lyrics" -> if (isBangla) "লিরিক্স স্টুডিও" else "Lyrics Studio"
                                         "create_adv" -> if (isBangla) "এডভান্সড এআই ১০ ফিচার" else "Advanced AI Tech"
                                         "create_stems" -> if (isBangla) "প্রো স্টেম ও ডিজে মিক্সার" else "Pro Stems & Mixer"
+                                        "voice_correction" -> if (isBangla) "ভয়েস কারেকশন ও টিউনিং" else "Voice Correction & Tuning"
                                         "video_visual" -> if (isBangla) "ভিডিও ও ভিজ্যুয়াল স্টুডিও" else "Video & Visual Studio"
                                         "feed" -> if (isBangla) "মিউজিক ফিড" else "Music Feed"
                                         "marketplace" -> if (isBangla) "এআই মার্কেটপ্লেস" else "AI Marketplace"
@@ -248,14 +270,25 @@ fun SurMusicApp(viewModel: MainViewModel) {
                             )
                         },
                         bottomBar = {
-                            Column {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .navigationBarsPadding()
+                            ) {
                                 MiniPlayer(
                                     song = currentSong,
                                     isPlaying = isPlaying,
+                                    playbackProgress = playbackProgress,
+                                    durationSeconds = playbackDurationSeconds,
+                                    isBuffering = isAudioBuffering,
+                                    bufferedProgress = bufferedProgress,
                                     onPlayPauseClick = { viewModel.togglePlayPause() },
+                                    onSeekChange = { newProgress -> viewModel.seekToProgress(newProgress) },
                                     onFavoriteClick = { currentSong?.let { viewModel.toggleFavorite(it) } },
                                     onOpenPlayer = { showFullscreenPlayer = true },
-                                    onSkipNext = { viewModel.skipToNext() }
+                                    onSkipNext = { viewModel.skipToNext() },
+                                    onSkipPrevious = { viewModel.skipToPrevious() },
+                                    onClose = { viewModel.closeMiniPlayer() }
                                 )
                                 BottomNavBar(
                                     currentRoute = when (currentScreen) {
@@ -341,7 +374,17 @@ fun SurMusicApp(viewModel: MainViewModel) {
                                     onAutoFinishLyrics = { lyrics, scheme -> viewModel.autoFinishLyrics(lyrics, scheme) },
                                     onTransformGenre = { lyrics, genre -> viewModel.transformLyricsGenre(lyrics, genre) },
                                     onAnalyzeVocal = { viewModel.analyzeVocalPerformance() },
-                                    initialTab = 0
+                                    initialTab = 0,
+                                    onGeneratePreviewSong = { prompt, genre, vibe, lyrics ->
+                                        viewModel.generateSongForPreview(prompt, genre, vibe, lyrics)
+                                    },
+                                    isPlaying = isPlaying,
+                                    playbackProgress = playbackProgress,
+                                    playbackDurationSeconds = playbackDurationSeconds,
+                                    isBuffering = isAudioBuffering,
+                                    onPlayPause = { viewModel.togglePlayPause() },
+                                    onSeek = { pos -> viewModel.seekToProgress(pos) },
+                                    onNavigateToHome = { currentScreen = "home" }
                                 )
                                 "create_lyrics" -> CreateSongScreen(
                                     lyricsHistory = lyricsHistory,
@@ -370,7 +413,17 @@ fun SurMusicApp(viewModel: MainViewModel) {
                                     onAutoFinishLyrics = { lyrics, scheme -> viewModel.autoFinishLyrics(lyrics, scheme) },
                                     onTransformGenre = { lyrics, genre -> viewModel.transformLyricsGenre(lyrics, genre) },
                                     onAnalyzeVocal = { viewModel.analyzeVocalPerformance() },
-                                    initialTab = 1
+                                    initialTab = 1,
+                                    onGeneratePreviewSong = { prompt, genre, vibe, lyrics ->
+                                        viewModel.generateSongForPreview(prompt, genre, vibe, lyrics)
+                                    },
+                                    isPlaying = isPlaying,
+                                    playbackProgress = playbackProgress,
+                                    playbackDurationSeconds = playbackDurationSeconds,
+                                    isBuffering = isAudioBuffering,
+                                    onPlayPause = { viewModel.togglePlayPause() },
+                                    onSeek = { pos -> viewModel.seekToProgress(pos) },
+                                    onNavigateToHome = { currentScreen = "home" }
                                 )
                                 "create_adv" -> CreateSongScreen(
                                     lyricsHistory = lyricsHistory,
@@ -399,7 +452,17 @@ fun SurMusicApp(viewModel: MainViewModel) {
                                     onAutoFinishLyrics = { lyrics, scheme -> viewModel.autoFinishLyrics(lyrics, scheme) },
                                     onTransformGenre = { lyrics, genre -> viewModel.transformLyricsGenre(lyrics, genre) },
                                     onAnalyzeVocal = { viewModel.analyzeVocalPerformance() },
-                                    initialTab = 2
+                                    initialTab = 2,
+                                    onGeneratePreviewSong = { prompt, genre, vibe, lyrics ->
+                                        viewModel.generateSongForPreview(prompt, genre, vibe, lyrics)
+                                    },
+                                    isPlaying = isPlaying,
+                                    playbackProgress = playbackProgress,
+                                    playbackDurationSeconds = playbackDurationSeconds,
+                                    isBuffering = isAudioBuffering,
+                                    onPlayPause = { viewModel.togglePlayPause() },
+                                    onSeek = { pos -> viewModel.seekToProgress(pos) },
+                                    onNavigateToHome = { currentScreen = "home" }
                                 )
                                 "create_stems" -> CreateSongScreen(
                                     lyricsHistory = lyricsHistory,
@@ -428,7 +491,17 @@ fun SurMusicApp(viewModel: MainViewModel) {
                                     onAutoFinishLyrics = { lyrics, scheme -> viewModel.autoFinishLyrics(lyrics, scheme) },
                                     onTransformGenre = { lyrics, genre -> viewModel.transformLyricsGenre(lyrics, genre) },
                                     onAnalyzeVocal = { viewModel.analyzeVocalPerformance() },
-                                    initialTab = 3
+                                    initialTab = 3,
+                                    onGeneratePreviewSong = { prompt, genre, vibe, lyrics ->
+                                        viewModel.generateSongForPreview(prompt, genre, vibe, lyrics)
+                                    },
+                                    isPlaying = isPlaying,
+                                    playbackProgress = playbackProgress,
+                                    playbackDurationSeconds = playbackDurationSeconds,
+                                    isBuffering = isAudioBuffering,
+                                    onPlayPause = { viewModel.togglePlayPause() },
+                                    onSeek = { pos -> viewModel.seekToProgress(pos) },
+                                    onNavigateToHome = { currentScreen = "home" }
                                 )
                                 "video_visual" -> VideoVisualScreen(
                                     appLanguage = appLanguage,
@@ -438,6 +511,36 @@ fun SurMusicApp(viewModel: MainViewModel) {
                                     onGenerateCoverArt = { prompt, style -> viewModel.generateAiCoverArt(prompt, style) },
                                     onGenerateStoryboard = { title, lyrics -> viewModel.generateAiStoryboard(title, lyrics) },
                                     onGenerateSubtitles = { lyrics, lang -> viewModel.generateSubtitles(lyrics, lang) }
+                                )
+                                "voice_correction" -> VoiceCorrectionScreen(
+                                    appLanguage = appLanguage,
+                                    onNavigateToCreateSong = { _, _ ->
+                                        currentScreen = "create_gen"
+                                    },
+                                    onSaveToDownloads = { title, _ ->
+                                        scope.launch {
+                                            viewModel.uploadAudioToSupabase(
+                                                title = title,
+                                                artist = "Sur AI Voice Corrector",
+                                                genre = "Tuned Vocal",
+                                                prompt = "Auto-tuned voice sample",
+                                                duration = "0:30",
+                                                fileName = "$title.wav",
+                                                audioBytes = ByteArray(1024),
+                                                imageUrl = "",
+                                                isPublic = false
+                                            )
+                                        }
+                                    },
+                                    onSaveVoiceRecord = { title, scale, tone, speed, pitch ->
+                                        viewModel.saveVoiceRecord(
+                                            title = title,
+                                            targetScale = scale,
+                                            vocalTone = tone,
+                                            retuneSpeed = speed,
+                                            pitchShiftSemitones = pitch
+                                        )
+                                    }
                                 )
                                 "feed", "community_feed" -> FeedScreen(
                                     songs = songs,
@@ -630,7 +733,10 @@ fun SurMusicApp(viewModel: MainViewModel) {
                         onFavoriteClick = { viewModel.toggleFavorite(currentSong!!) },
                         onClose = { showFullscreenPlayer = false },
                         onSkipNext = { viewModel.skipToNext() },
-                        onSkipPrevious = { viewModel.skipToPrevious() }
+                        onSkipPrevious = { viewModel.skipToPrevious() },
+                        playbackProgress = playbackProgress,
+                        playbackDurationSeconds = playbackDurationSeconds,
+                        onSeekToProgress = { pos -> viewModel.seekToProgress(pos) }
                     )
                 }
 

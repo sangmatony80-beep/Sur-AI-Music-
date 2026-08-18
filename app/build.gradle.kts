@@ -72,6 +72,10 @@ secrets {
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.
 dependencies {
+  implementation(libs.androidx.media3.exoplayer)
+  implementation(libs.androidx.media3.ui)
+  implementation(libs.androidx.media3.common)
+  implementation(libs.androidx.media3.session)
   implementation(platform(libs.androidx.compose.bom))
   implementation(platform(libs.firebase.bom))
   implementation(platform(libs.supabase.bom))
@@ -92,6 +96,7 @@ dependencies {
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.compose.ui.graphics)
+  implementation(libs.androidx.work.runtime.ktx)
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.datastore.preferences)
@@ -110,9 +115,9 @@ dependencies {
   // Uncomment ALL FOUR of the following dependencies together to use Firebase Auth and Google
   // Sign-In via Credential Manager:
   // implementation(libs.firebase.auth)
-  // implementation(libs.androidx.credentials)
-  // implementation(libs.androidx.credentials.play.services)
-  // implementation(libs.googleid)
+  implementation(libs.androidx.credentials)
+  implementation(libs.androidx.credentials.play.services)
+  implementation(libs.googleid)
   implementation(libs.firebase.appcheck.recaptcha)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)

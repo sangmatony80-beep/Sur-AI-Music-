@@ -28,6 +28,9 @@ data class RemoteSongItem(
     @SerialName("likes_count") val likesCount: Int = 0,
     @SerialName("plays_count") val playsCount: Int = 0,
     @SerialName("is_public") val isPublic: Boolean = true,
+    @SerialName("synced_lyrics") val syncedLyrics: String? = null,
+    @SerialName("lyrics_lrc") val lyricsLrc: String? = null,
+    @SerialName("metadata") val metadata: String? = null,
     @SerialName("created_at") val createdAt: String? = null
 )
 
@@ -51,4 +54,20 @@ data class RemoteLiveAnnouncement(
     @SerialName("severity") val severity: String = "INFO",
     @SerialName("is_active") val isActive: Boolean = true,
     @SerialName("created_at") val createdAt: String? = null
+)
+
+@Serializable
+data class RemoteVoiceRecordItem(
+    @SerialName("id") val id: String = "",
+    @SerialName("title") val title: String = "",
+    @SerialName("artist") val artist: String = "User Voice",
+    @SerialName("duration") val duration: String = "0:30",
+    @SerialName("local_file_path") val localFilePath: String = "",
+    @SerialName("audio_url") val audioUrl: String = "",
+    @SerialName("target_scale") val targetScale: String = "C Major",
+    @SerialName("vocal_tone") val vocalTone: String = "Melodious Sweetness",
+    @SerialName("retune_speed") val retuneSpeed: Float = 0.85f,
+    @SerialName("pitch_shift_semitones") val pitchShiftSemitones: Float = 0f,
+    @SerialName("is_corrected") val isCorrected: Boolean = false,
+    @SerialName("created_at") val createdAt: Long = System.currentTimeMillis()
 )

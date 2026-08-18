@@ -234,8 +234,9 @@ fun DownloadsScreen(
                 }
             }
 
-            // Tabs: Downloaded Songs vs Available for Download
+            // Tabs: Downloaded Songs vs Favorites vs Available for Download
             item {
+                val favoriteSongs = allSongs.filter { it.isFavorite }
                 TabRow(
                     selectedTabIndex = selectedTab,
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -247,7 +248,8 @@ fun DownloadsScreen(
                         text = {
                             Text(
                                 text = if (isBangla) "ডাউনলোডকৃত (${downloadedSongs.size})" else "Downloaded (${downloadedSongs.size})",
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
                             )
                         }
                     )
@@ -255,9 +257,24 @@ fun DownloadsScreen(
                         selected = selectedTab == 1,
                         onClick = { selectedTab = 1 },
                         text = {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Default.Favorite, contentDescription = null, tint = Color(0xFFEC4899), modifier = Modifier.size(13.dp))
+                                Text(
+                                    text = if (isBangla) "পছন্দের গান (${favoriteSongs.size})" else "Favorites (${favoriteSongs.size})",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    )
+                    Tab(
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 },
+                        text = {
                             Text(
-                                text = if (isBangla) "নতুন গান ডাউনলোড" else "Available Tracks",
-                                fontWeight = FontWeight.Bold
+                                text = if (isBangla) "সকল গান (${allSongs.size})" else "All Tracks (${allSongs.size})",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
                             )
                         }
                     )
@@ -306,7 +323,11 @@ fun DownloadsScreen(
                 }
             }
 
-            val songsToDisplay = if (selectedTab == 0) downloadedSongs else allSongs
+            val songsToDisplay = when (selectedTab) {
+                0 -> downloadedSongs
+                1 -> allSongs.filter { it.isFavorite }
+                else -> allSongs
+            }
 
             if (songsToDisplay.isEmpty()) {
                 item {
@@ -321,13 +342,17 @@ fun DownloadsScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.CloudDownload,
+                                imageVector = if (selectedTab == 1) Icons.Default.FavoriteBorder else Icons.Default.CloudDownload,
                                 contentDescription = null,
                                 modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )
                             Text(
-                                text = if (isBangla) "কোনো গান ডাউনলোড করা নেই" else "No songs downloaded yet",
+                                text = when (selectedTab) {
+                                    1 -> if (isBangla) "আপনার কোনো পছন্দের গান এখনো যুক্ত করা হয়নি" else "No favorite songs added yet"
+                                    0 -> if (isBangla) "কোনো গান অফলাইনে ডাউনলোড করা নেই" else "No songs downloaded yet"
+                                    else -> if (isBangla) "কোনো গান পাওয়া যায়নি" else "No tracks found"
+                                },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -381,27 +406,57 @@ fun DownloadsScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     if (isAlreadyDownloaded) {
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                        ) {
+                                            Text(
+                                                text = "অফলাইন সেভড",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                            )
+                                        }
+                                    }
+                                    if (song.isFavorite) {
                                         Icon(
-                                            imageVector = Icons.Default.CheckCircle,
-                                            contentDescription = "Downloaded",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(14.dp)
+                                            imageVector = Icons.Default.Favorite,
+                                            contentDescription = "Favorite",
+                                            tint = Color(0xFFEC4899),
+                                            modifier = Modifier.size(12.dp)
                                         )
                                     }
                                 }
                             }
 
-                            IconButton(
-                                onClick = {
-                                    selectedSongForDownload = song
-                                    showDownloadDialog = true
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isAlreadyDownloaded && selectedTab == 0) {
+                                    IconButton(
+                                        onClick = {
+                                            downloadedSongs = downloadedSongs.filter { it.id != song.id }
+                                            Toast.makeText(context, "${song.title} অফলাইন স্টোরেজ থেকে ডিলিট করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.DeleteOutline,
+                                            contentDescription = "Delete from Offline",
+                                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                                        )
+                                    }
                                 }
-                            ) {
-                                Icon(
-                                    imageVector = if (isAlreadyDownloaded) Icons.Default.FileDownloadDone else Icons.Default.Download,
-                                    contentDescription = "Download Option",
-                                    tint = if (isAlreadyDownloaded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                IconButton(
+                                    onClick = {
+                                        selectedSongForDownload = song
+                                        showDownloadDialog = true
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = if (isAlreadyDownloaded) Icons.Default.FileDownloadDone else Icons.Default.Download,
+                                        contentDescription = "Download Option",
+                                        tint = if (isAlreadyDownloaded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }

@@ -29,6 +29,17 @@ import com.example.ui.components.InteractiveWaveformVisualizer
 import com.example.ui.components.RingtoneTrimmerDialog
 import com.example.ui.components.SocialStoryGeneratorDialog
 import com.example.ui.components.StemSeparationDialog
+import com.example.ui.components.AiAlbumArtGeneratorDialog
+import com.example.ui.components.SynchronizedLyricsView
+import com.example.ui.components.SpatialAudio360StudioDialog
+import com.example.ui.components.VirtualInstrumentBeatPadDialog
+import com.example.ui.components.HummingToSargamTranscriptionDialog
+import com.example.ui.components.LiveKaraokeVocalStudioDialog
+import com.example.ui.components.MultiTrackDawTimelineDialog
+import com.example.ui.components.GuitarChordsVisualizerDialog
+import com.example.ui.components.RiyazTanpuraStudioDialog
+import com.example.ui.components.AudioMasteringEqVisualizerDialog
+import com.example.ui.components.BengaliLyricistNotepadDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -40,18 +51,34 @@ fun PlayerScreen(
     onFavoriteClick: () -> Unit,
     onClose: () -> Unit,
     onSkipNext: () -> Unit = {},
-    onSkipPrevious: () -> Unit = {}
+    onSkipPrevious: () -> Unit = {},
+    playbackProgress: Float = 0.35f,
+    playbackDurationSeconds: Int = 210,
+    onSeekToProgress: (Float) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var sliderPosition by remember { mutableFloatStateOf(0.35f) }
+    var sliderPosition by remember(playbackProgress) { mutableFloatStateOf(playbackProgress) }
+    var showSyncedLyricsModal by remember { mutableStateOf(false) }
     var showDownloadDialog by remember { mutableStateOf(false) }
     var showStemDialog by remember { mutableStateOf(false) }
     var showStoryDialog by remember { mutableStateOf(false) }
     var showRingtoneDialog by remember { mutableStateOf(false) }
+    var showCoverArtDialog by remember { mutableStateOf(false) }
+    var showSpatial8dDialog by remember { mutableStateOf(false) }
+    var showBeatPadDialog by remember { mutableStateOf(false) }
+    var showHummingSargamDialog by remember { mutableStateOf(false) }
+    var showKaraokeDialog by remember { mutableStateOf(false) }
+    var showDawDialog by remember { mutableStateOf(false) }
+    var showChordsDialog by remember { mutableStateOf(false) }
+    var showTanpuraRiyazDialog by remember { mutableStateOf(false) }
+    var showMasteringEqDialog by remember { mutableStateOf(false) }
+    var showLyricistNotepadDialog by remember { mutableStateOf(false) }
     var isDownloading by remember { mutableStateOf(false) }
     var downloadProgress by remember { mutableFloatStateOf(0f) }
     var downloadMessage by remember { mutableStateOf("") }
+    
+    var currentSongArt by remember(song.imageUrl) { mutableStateOf(song.imageUrl) }
     
     // Equalizer & FX quick states
     var bassBoostEnabled by remember { mutableStateOf(true) }
@@ -147,15 +174,40 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Artwork
-                AsyncImage(
-                    model = song.imageUrl,
-                    contentDescription = song.title,
+                // Artwork with AI Cover Generator Badge
+                Box(
                     modifier = Modifier
                         .size(240.dp)
                         .clip(RoundedCornerShape(28.dp)),
-                    contentScale = ContentScale.Crop
-                )
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = currentSongArt,
+                        contentDescription = song.title,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    
+                    // AI Cover Art generator overlay button
+                    Surface(
+                        onClick = { showCoverArtDialog = true },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(10.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.Black.copy(alpha = 0.65f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color(0xFFFACC15), modifier = Modifier.size(12.dp))
+                            Text("AI Art", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
@@ -180,19 +232,43 @@ fun PlayerScreen(
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Surface(
+                        onClick = { showSyncedLyricsModal = true },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(72.dp),
+                            .height(76.dp),
                         shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                     ) {
-                        Box(modifier = Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Mic,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Text(
+                                    text = "🎤 লাইভ সিঙ্কড লিরিক্স ও কারাওকে (ট্যাপ করুন)",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = song.lyrics,
+                                text = song.lyrics.ifEmpty { "সুরের সাথে তাল মিলিয়ে লিরিক্স দেখুন..." },
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 textAlign = TextAlign.Center,
-                                maxLines = 3
+                                maxLines = 2
                             )
                         }
                     }
@@ -204,7 +280,10 @@ fun PlayerScreen(
                 InteractiveWaveformVisualizer(
                     progress = sliderPosition,
                     isPlaying = isPlaying,
-                    onSeek = { sliderPosition = it },
+                    onSeek = { 
+                        sliderPosition = it
+                        onSeekToProgress(it)
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -213,7 +292,10 @@ fun PlayerScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = "1:15", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val currentSec = (sliderPosition * playbackDurationSeconds).toInt()
+                    val curMin = currentSec / 60
+                    val curRemSec = currentSec % 60
+                    Text(text = String.format("%d:%02d", curMin, curRemSec), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(text = song.duration, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
@@ -254,11 +336,26 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Quick Studio Action Bar (Stems Mixer + Story Export + Ringtone + Download)
+                // Quick Studio Action Bar (Synced Lyrics + Stems Mixer + Story Export + Ringtone + Download)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+                    FilledTonalButton(
+                        onClick = { showSyncedLyricsModal = true },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFF10B981).copy(alpha = 0.2f),
+                            contentColor = Color(0xFF10B981)
+                        )
+                    ) {
+                        Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("Lyrics", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+
                     FilledTonalButton(
                         onClick = { showRingtoneDialog = true },
                         shape = RoundedCornerShape(12.dp),
@@ -304,7 +401,223 @@ fun PlayerScreen(
                         Text("Save", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Advanced AI Studio Suite Bar (8D Spatial Audio + Beat Matrix + Humming Sargam + Cover Art)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    FilledTonalButton(
+                        onClick = { showSpatial8dDialog = true },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFF6366F1).copy(alpha = 0.2f),
+                            contentColor = Color(0xFF818CF8)
+                        )
+                    ) {
+                        Icon(Icons.Default.Headphones, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("8D Audio", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    FilledTonalButton(
+                        onClick = { showBeatPadDialog = true },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFFF59E0B).copy(alpha = 0.2f),
+                            contentColor = Color(0xFFFBBF24)
+                        )
+                    ) {
+                        Icon(Icons.Default.GridOn, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("Beat Pad", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    FilledTonalButton(
+                        onClick = { showHummingSargamDialog = true },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFF10B981).copy(alpha = 0.2f),
+                            contentColor = Color(0xFF34D399)
+                        )
+                    ) {
+                        Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("Sargam", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    FilledTonalButton(
+                        onClick = { showCoverArtDialog = true },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFFEC4899).copy(alpha = 0.2f),
+                            contentColor = Color(0xFFF472B6)
+                        )
+                    ) {
+                        Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("Cover Art", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Pro Live Studio Suite 2 (Live Karaoke + MultiTrack DAW + Guitar Chords)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    FilledTonalButton(
+                        onClick = { showKaraokeDialog = true },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFFEC4899).copy(alpha = 0.25f),
+                            contentColor = Color(0xFFF472B6)
+                        )
+                    ) {
+                        Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("কারাওকে", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    FilledTonalButton(
+                        onClick = { showDawDialog = true },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFF8B5CF6).copy(alpha = 0.25f),
+                            contentColor = Color(0xFFA78BFA)
+                        )
+                    ) {
+                        Icon(Icons.Default.GraphicEq, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("মাল্টি-ট্র্যাক DAW", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    FilledTonalButton(
+                        onClick = { showChordsDialog = true },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFFF59E0B).copy(alpha = 0.25f),
+                            contentColor = Color(0xFFFBBF24)
+                        )
+                    ) {
+                        Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("কর্ড ট্যাব", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Pro Classical & Audio Mastering Suite (Tanpura Riyaz, Mastering EQ, Lyricist Pad)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    FilledTonalButton(
+                        onClick = { showTanpuraRiyazDialog = true },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFFD97706).copy(alpha = 0.25f),
+                            contentColor = Color(0xFFFBBF24)
+                        )
+                    ) {
+                        Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("তানপুরা ও রিয়াজ", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    FilledTonalButton(
+                        onClick = { showMasteringEqDialog = true },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFF06B6D4).copy(alpha = 0.25f),
+                            contentColor = Color(0xFF22D3EE)
+                        )
+                    ) {
+                        Icon(Icons.Default.Equalizer, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("মাস্টারিং EQ", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    FilledTonalButton(
+                        onClick = { showLyricistNotepadDialog = true },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFF10B981).copy(alpha = 0.25f),
+                            contentColor = Color(0xFF34D399)
+                        )
+                    ) {
+                        Icon(Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("গীতিকার খাতা", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
+        }
+    }
+
+    // 8D Spatial Audio Dialog
+    if (showSpatial8dDialog) {
+        SpatialAudio360StudioDialog(
+            song = song,
+            onDismiss = { showSpatial8dDialog = false }
+        )
+    }
+
+    // Beat Pad Matrix Dialog
+    if (showBeatPadDialog) {
+        VirtualInstrumentBeatPadDialog(
+            onDismiss = { showBeatPadDialog = false }
+        )
+    }
+
+    // Humming to Sargam Transcriber Dialog
+    if (showHummingSargamDialog) {
+        HummingToSargamTranscriptionDialog(
+            onDismiss = { showHummingSargamDialog = false }
+        )
+    }
+
+    // Synced Lyrics & Karaoke Fullscreen Modal
+    if (showSyncedLyricsModal) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showSyncedLyricsModal = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            SynchronizedLyricsView(
+                song = song,
+                playbackProgress = sliderPosition,
+                durationSeconds = playbackDurationSeconds,
+                isPlaying = isPlaying,
+                onSeekToProgress = { progress ->
+                    sliderPosition = progress
+                    onSeekToProgress(progress)
+                },
+                onClose = { showSyncedLyricsModal = false }
+            )
         }
     }
 
@@ -456,6 +769,59 @@ fun PlayerScreen(
                     Text("Close")
                 }
             }
+        )
+    }
+
+    if (showCoverArtDialog) {
+        AiAlbumArtGeneratorDialog(
+            songTitle = song.title,
+            genre = song.genre,
+            onDismiss = { showCoverArtDialog = false },
+            onArtApplied = { newArtUrl ->
+                currentSongArt = newArtUrl
+            }
+        )
+    }
+
+    if (showKaraokeDialog) {
+        LiveKaraokeVocalStudioDialog(
+            song = song,
+            onDismiss = { showKaraokeDialog = false }
+        )
+    }
+
+    if (showDawDialog) {
+        MultiTrackDawTimelineDialog(
+            song = song,
+            onDismiss = { showDawDialog = false }
+        )
+    }
+
+    if (showChordsDialog) {
+        GuitarChordsVisualizerDialog(
+            song = song,
+            onDismiss = { showChordsDialog = false }
+        )
+    }
+
+    if (showTanpuraRiyazDialog) {
+        RiyazTanpuraStudioDialog(
+            song = song,
+            onDismiss = { showTanpuraRiyazDialog = false }
+        )
+    }
+
+    if (showMasteringEqDialog) {
+        AudioMasteringEqVisualizerDialog(
+            song = song,
+            onDismiss = { showMasteringEqDialog = false }
+        )
+    }
+
+    if (showLyricistNotepadDialog) {
+        BengaliLyricistNotepadDialog(
+            initialLyrics = song.lyrics,
+            onDismiss = { showLyricistNotepadDialog = false }
         )
     }
 }

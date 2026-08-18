@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,9 +34,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.ClonedVoiceEntity
 import com.example.data.local.LyricsHistoryEntity
+import com.example.data.local.SongEntity
 import com.example.data.repository.MoodAnalysisResult
 import com.example.data.repository.VocalCoachResult
+import com.example.ui.components.AiVocalTunerDialog
 import com.example.ui.components.MelodyHummingDialog
+import com.example.ui.components.VoiceCloningDialog
+import com.example.ui.components.SongCreationPreviewDialog
+import com.example.ui.components.AiAlbumArtGeneratorDialog
+import com.example.ui.components.VirtualInstrumentBeatPadDialog
+import com.example.ui.components.BanglaLyricsRhymeEngineDialog
+import com.example.ui.components.HummingToSargamTranscriptionDialog
+import com.example.ui.components.LiveKaraokeVocalStudioDialog
+import com.example.ui.components.MultiTrackDawTimelineDialog
+import com.example.ui.components.GuitarChordsVisualizerDialog
+import com.example.ui.components.RiyazTanpuraStudioDialog
+import com.example.ui.components.AudioMasteringEqVisualizerDialog
+import com.example.ui.components.BengaliLyricistNotepadDialog
+import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -93,72 +109,95 @@ fun CreateSongScreen(
     onAutoFinishLyrics: suspend (lyrics: String, scheme: String) -> String,
     onTransformGenre: suspend (lyrics: String, targetGenre: String) -> String,
     onAnalyzeVocal: suspend () -> VocalCoachResult,
-    initialTab: Int = 0
+    initialTab: Int = 0,
+    onGeneratePreviewSong: (suspend (prompt: String, genre: String, vibe: String, lyrics: String) -> SongEntity?)? = null,
+    isPlaying: Boolean = false,
+    playbackProgress: Float = 0f,
+    playbackDurationSeconds: Int = 210,
+    isBuffering: Boolean = false,
+    onPlayPause: () -> Unit = {},
+    onSeek: (Float) -> Unit = {},
+    onNavigateToHome: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var selectedTab by remember(initialTab) { mutableIntStateOf(initialTab) } // 0: Studio Gen, 1: Lyrics Studio, 2: Advanced AI Tech, 3: Pro Toolkit & Stems
+    var selectedTab by rememberSaveable(initialTab) { mutableStateOf(initialTab) } // 0: Studio Gen, 1: Lyrics Studio, 2: Advanced AI Tech, 3: Pro Toolkit & Stems
 
-    var showHummingDialog by remember { mutableStateOf(false) }
+    var showHummingDialog by rememberSaveable { mutableStateOf(false) }
+    var showVocalTunerDialog by rememberSaveable { mutableStateOf(false) }
+    var showVoiceCloningDialog by rememberSaveable { mutableStateOf(false) }
+    var showAiCoverArtDialog by rememberSaveable { mutableStateOf(false) }
+    var showBeatPadDialog by rememberSaveable { mutableStateOf(false) }
+    var showRhymeEngineDialog by rememberSaveable { mutableStateOf(false) }
+    var showHummingSargamDialog by rememberSaveable { mutableStateOf(false) }
+    var showLiveKaraokeDialog by rememberSaveable { mutableStateOf(false) }
+    var showMultiTrackDawDialog by rememberSaveable { mutableStateOf(false) }
+    var showGuitarChordsDialog by rememberSaveable { mutableStateOf(false) }
+    var showTanpuraRiyazDialog by rememberSaveable { mutableStateOf(false) }
+    var showMasteringEqDialog by rememberSaveable { mutableStateOf(false) }
+    var showLyricistNotepadDialog by rememberSaveable { mutableStateOf(false) }
+    var customCoverArtUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    var customClonedVoices by remember { mutableStateOf(listOf<String>()) }
+    var previewSong by remember { mutableStateOf<SongEntity?>(null) }
 
     // Core Feature 1: AI Lyrics Generator prompt & language
-    var prompt by remember { mutableStateOf("") }
-    var selectedLanguage by remember { mutableStateOf("English") }
+    var prompt by rememberSaveable { mutableStateOf("") }
+    var selectedLanguage by rememberSaveable { mutableStateOf("English") }
 
     // Core Feature 2 & 9: 25+ Genres & Dual Genre Fusion
-    var primaryGenre by remember { mutableStateOf("Pop") }
-    var secondaryGenre by remember { mutableStateOf("EDM") }
-    var isDualGenreEnabled by remember { mutableStateOf(true) }
+    var primaryGenre by rememberSaveable { mutableStateOf("Pop") }
+    var secondaryGenre by rememberSaveable { mutableStateOf("EDM") }
+    var isDualGenreEnabled by rememberSaveable { mutableStateOf(true) }
 
     // Vibe & Atmosphere (Mood Selector)
-    var selectedVibe by remember { mutableStateOf("Chill") }
+    var selectedVibe by rememberSaveable { mutableStateOf("Chill") }
 
     // Core Feature 3 & 4: Lyrics Editor & Copyright
-    var customLyrics by remember { mutableStateOf("") }
-    var isCheckingCopyright by remember { mutableStateOf(false) }
-    var copyrightStatus by remember { mutableStateOf<Boolean?>(null) }
+    var customLyrics by rememberSaveable { mutableStateOf("") }
+    var isCheckingCopyright by rememberSaveable { mutableStateOf(false) }
+    var copyrightStatus by rememberSaveable { mutableStateOf<Boolean?>(null) }
 
     // Core Feature 5 & 11: AI Singer Voice TTS & Duet Mode (Male/Female/Special)
-    var selectedVoice by remember { mutableStateOf("Aria (Warm Soprano)") }
-    var selectedVoiceGenderFilter by remember { mutableStateOf("All") } // "All", "Female", "Male", "Special"
-    var selectedDuetGenderFilter by remember { mutableStateOf("All") }
-    var voiceMood by remember { mutableStateOf("Energetic") }
-    var voiceSpeed by remember { mutableFloatStateOf(1.0f) }
-    var isDuetModeEnabled by remember { mutableStateOf(false) }
-    var duetSecondVoice by remember { mutableStateOf("Zayn (Soulful Tenor)") }
+    var selectedVoice by rememberSaveable { mutableStateOf("Aria (Warm Soprano)") }
+    var selectedVoiceGenderFilter by rememberSaveable { mutableStateOf("All") } // "All", "Female", "Male", "Special"
+    var selectedDuetGenderFilter by rememberSaveable { mutableStateOf("All") }
+    var voiceMood by rememberSaveable { mutableStateOf("Energetic") }
+    var voiceSpeed by rememberSaveable { mutableStateOf(1.0f) }
+    var isDuetModeEnabled by rememberSaveable { mutableStateOf(false) }
+    var duetSecondVoice by rememberSaveable { mutableStateOf("Zayn (Soulful Tenor)") }
 
     // Core Feature 8: Instrument Auto Add
     val availableInstruments = listOf("808 Bass", "Drums", "Electric Guitar", "Acoustic Piano", "Synthesizer", "Tabla", "Dotara", "Strings", "Brass", "Flute")
     var selectedInstruments by remember { mutableStateOf(setOf("808 Bass", "Drums", "Synthesizer")) }
 
     // Core Feature 7 & 6: Suno v4 AI Music Generator & MP3 Export
-    var isGeneratingSong by remember { mutableStateOf(false) }
-    var generationStepText by remember { mutableStateOf("") }
-    var useExternalSunoApi by remember { mutableStateOf(false) }
-    var externalSunoApiKey by remember { mutableStateOf("") }
+    var isGeneratingSong by rememberSaveable { mutableStateOf(false) }
+    var generationStepText by rememberSaveable { mutableStateOf("") }
+    var useExternalSunoApi by rememberSaveable { mutableStateOf(false) }
+    var externalSunoApiKey by rememberSaveable { mutableStateOf("") }
 
     // Core Feature 10: Voice Cloning
-    var cloneName by remember { mutableStateOf("") }
-    var isRecordingVoice by remember { mutableStateOf(false) }
+    var cloneName by rememberSaveable { mutableStateOf("") }
+    var isRecordingVoice by rememberSaveable { mutableStateOf(false) }
 
     // Core Feature 12: Song to Lyrics Transcribe
-    var isTranscribingAudio by remember { mutableStateOf(false) }
+    var isTranscribingAudio by rememberSaveable { mutableStateOf(false) }
 
     // Core Feature 13 & 14: Chord Progression & Beat Suggestion AI
     var chordList by remember { mutableStateOf(listOf<String>()) }
     var beatList by remember { mutableStateOf(listOf<String>()) }
 
     // Core Feature 15: Melody Generator
-    var selectedKey by remember { mutableStateOf("C") }
-    var selectedScale by remember { mutableStateOf("Major") }
+    var selectedKey by rememberSaveable { mutableStateOf("C") }
+    var selectedScale by rememberSaveable { mutableStateOf("Major") }
     var melodyNotes by remember { mutableStateOf(listOf<String>()) }
 
     // Core Feature 16: Stem Separation
-    var vocalStemVol by remember { mutableFloatStateOf(0.9f) }
-    var drumStemVol by remember { mutableFloatStateOf(0.85f) }
-    var bassStemVol by remember { mutableFloatStateOf(0.95f) }
-    var synthStemVol by remember { mutableFloatStateOf(0.80f) }
+    var vocalStemVol by rememberSaveable { mutableStateOf(0.9f) }
+    var drumStemVol by rememberSaveable { mutableStateOf(0.85f) }
+    var bassStemVol by rememberSaveable { mutableStateOf(0.95f) }
+    var synthStemVol by rememberSaveable { mutableStateOf(0.80f) }
 
     // Core Feature 17: Pitch Detection
     var isDetectingPitch by remember { mutableStateOf(false) }
@@ -444,6 +483,253 @@ fun CreateSongScreen(
                                             contentDescription = null,
                                             modifier = Modifier.size(14.dp),
                                             tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+
+                            item {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFF1E293B),
+                                        border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { showBeatPadDialog = true }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Icon(Icons.Default.GridOn, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(16.dp))
+                                                Text("১৬-প্যাড বিট ম্যাট্রিক্স", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                                            }
+                                            Text("তবলা, ঢোলক, দোতারা ও ৮০৮ ড্রামস দিয়ে লাইভ বিট তৈরি করুন", fontSize = 10.sp, color = Color.LightGray)
+                                        }
+                                    }
+
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFF1E293B),
+                                        border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.4f)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { showHummingSargamDialog = true }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
+                                                Text("হামিং টু স্বরলিপি", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                                            }
+                                            Text("গুনগুন থেকে সা-রে-গা-মা স্বরলিপি ও স্কেল ডিটেকশন", fontSize = 10.sp, color = Color.LightGray)
+                                        }
+                                    }
+                                }
+                            }
+
+                            item {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFF1E293B),
+                                        border = BorderStroke(1.dp, Color(0xFFEC4899).copy(alpha = 0.4f)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { showLiveKaraokeDialog = true }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Icon(Icons.Default.Mic, contentDescription = null, tint = Color(0xFFEC4899), modifier = Modifier.size(16.dp))
+                                                Text("লাইভ কারাওকে", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color.White)
+                                            }
+                                            Text("ভোকাল রিমুভার ও রেকর্ডিং স্টুডিও", fontSize = 9.sp, color = Color.LightGray)
+                                        }
+                                    }
+
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFF1E293B),
+                                        border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.4f)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { showMultiTrackDawDialog = true }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Icon(Icons.Default.GraphicEq, contentDescription = null, tint = Color(0xFF8B5CF6), modifier = Modifier.size(16.dp))
+                                                Text("মাল্টি-ট্র্যাক DAW", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color.White)
+                                            }
+                                            Text("৪-ট্র্যাক অডিও অ্যারেঞ্জার ও মিক্সার", fontSize = 9.sp, color = Color.LightGray)
+                                        }
+                                    }
+
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFF1E293B),
+                                        border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { showGuitarChordsDialog = true }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(16.dp))
+                                                Text("গিটার কর্ড", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color.White)
+                                            }
+                                            Text("ইন্টারেক্টিভ ফ্রেটবোর্ড ও ট্যাব", fontSize = 9.sp, color = Color.LightGray)
+                                        }
+                                    }
+                                }
+                            }
+
+                            item {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFF1E293B),
+                                        border = BorderStroke(1.dp, Color(0xFFD97706).copy(alpha = 0.4f)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { showTanpuraRiyazDialog = true }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color(0xFFFBBF24), modifier = Modifier.size(16.dp))
+                                                Text("তানপুরা রিয়াজ", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color.White)
+                                            }
+                                            Text("ড্রোন ও রাগ স্কেল গাইড", fontSize = 9.sp, color = Color.LightGray)
+                                        }
+                                    }
+
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFF1E293B),
+                                        border = BorderStroke(1.dp, Color(0xFF06B6D4).copy(alpha = 0.4f)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { showMasteringEqDialog = true }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Icon(Icons.Default.Equalizer, contentDescription = null, tint = Color(0xFF06B6D4), modifier = Modifier.size(16.dp))
+                                                Text("মাস্টারিং EQ", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color.White)
+                                            }
+                                            Text("৭-ব্যান্ড EQ ও স্পেকট্রাম", fontSize = 9.sp, color = Color.LightGray)
+                                        }
+                                    }
+
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFF1E293B),
+                                        border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.4f)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { showLyricistNotepadDialog = true }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Icon(Icons.Default.EditNote, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
+                                                Text("গীতিকার খাতা", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color.White)
+                                            }
+                                            Text("ছন্দ-মাত্রা ও অন্ত্যমিল", fontSize = 9.sp, color = Color.LightGray)
+                                        }
+                                    }
+                                }
+                            }
+
+                            item {
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                    border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f)),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { showAiCoverArtDialog = true }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            if (customCoverArtUrl != null) {
+                                                AsyncImage(
+                                                    model = customCoverArtUrl,
+                                                    contentDescription = "Cover Art",
+                                                    modifier = Modifier
+                                                        .size(36.dp)
+                                                        .clip(RoundedCornerShape(8.dp)),
+                                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                                )
+                                            } else {
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = Color(0xFFF59E0B),
+                                                    modifier = Modifier.size(32.dp)
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Palette,
+                                                            contentDescription = null,
+                                                            tint = Color.Black,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            Column {
+                                                Text(
+                                                    text = "🎨 এআই অ্যালবাম কাভার আর্ট স্টুডিও",
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Text(
+                                                    text = if (customCoverArtUrl != null) "কাভার আর্ট সিলেক্ট করা হয়েছে (ট্যাপ করে পরিবর্তন করুন)" else "সাইবারপাংক, বাউল ও রেট্রো স্টাইলে কাস্টম আর্ট তৈরি করুন",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowForwardIos,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(14.dp),
+                                            tint = Color(0xFFF59E0B)
                                         )
                                     }
                                 }
@@ -842,12 +1128,46 @@ fun CreateSongScreen(
                                         }
 
                                         // Lead Singer Voice Chips
-                                        Text(
-                                            text = "মূল গায়ক (Lead Vocalist):",
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 12.sp
-                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "মূল গায়ক (Lead Vocalist):",
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 12.sp
+                                            )
+                                            TextButton(
+                                                onClick = { showVoiceCloningDialog = true },
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                                modifier = Modifier.height(28.dp)
+                                            ) {
+                                                Icon(Icons.Default.RecordVoiceOver, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("নিজের কণ্ঠ ক্লোন করুন", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                            }
+                                        }
                                         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            customClonedVoices.forEach { clonedName ->
+                                                val isSelected = selectedVoice == clonedName
+                                                item {
+                                                    FilterChip(
+                                                        selected = isSelected,
+                                                        onClick = { selectedVoice = clonedName },
+                                                        leadingIcon = {
+                                                            Text("🎤", fontSize = 12.sp)
+                                                        },
+                                                        label = {
+                                                            Text(clonedName, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                        },
+                                                        colors = FilterChipDefaults.filterChipColors(
+                                                            selectedContainerColor = Color(0xFF10B981),
+                                                            selectedLabelColor = Color.White
+                                                        )
+                                                    )
+                                                }
+                                            }
                                             items(filteredVoices) { vm ->
                                                 val isSelected = selectedVoice == vm.name
                                                 val chipColor = when (vm.gender) {
@@ -1041,6 +1361,58 @@ fun CreateSongScreen(
                                 )
                             }
 
+                            // AI Auto-Tune & Vocal Beautifier Launcher Card
+                            item {
+                                Card(
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)),
+                                    shape = RoundedCornerShape(16.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { showVocalTunerDialog = true }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.tertiary,
+                                            modifier = Modifier.size(40.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = Icons.Default.AutoAwesome,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onTertiary,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        }
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "বেসুরো কন্ঠ শ্রুতিমধুর করার জাদুকরী টুল (AI Auto-Tune)",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                            )
+                                            Text(
+                                                text = "আপনার নিজের গাওয়া বেসুরো কণ্ঠ অটো-টিউন ও রিভার্ব দিয়ে সুরেল করুন ✨",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                                            )
+                                        }
+
+                                        Icon(
+                                            imageVector = Icons.Default.ChevronRight,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.tertiary
+                                        )
+                                    }
+                                }
+                            }
+
                             item {
                                 if (isGeneratingSong) {
                                     Card(
@@ -1065,18 +1437,30 @@ fun CreateSongScreen(
                                         onClick = {
                                             scope.launch {
                                                 isGeneratingSong = true
-                                                generationStepText = "1/4: GPT-4o structuring lyrics & harmonies..."
+                                                generationStepText = "1/4: Structuring chords & harmonic arrangement..."
                                                 delay(500)
-                                                generationStepText = "2/4: ElevenLabs synthesising $selectedVoice..."
-                                                delay(600)
-                                                generationStepText = "3/4: Suno v4 blending $primaryGenre arrangement..."
-                                                delay(600)
-                                                generationStepText = "4/4: Mastering 320kbps MP3 track..."
+                                                generationStepText = "2/4: Synthesizing $selectedVoice vocal melody..."
                                                 delay(500)
-                                                isGeneratingSong = false
+                                                generationStepText = "3/4: Rendering $primaryGenre instrumentation & beats..."
+                                                delay(500)
+                                                generationStepText = "4/4: Mastering real 44.1kHz audio stream..."
+                                                delay(400)
                                                 val genreFinal = if (isDualGenreEnabled) "$primaryGenre + $secondaryGenre" else primaryGenre
-                                                onGenerateSong(prompt, genreFinal, selectedVibe, customLyrics)
-                                                Toast.makeText(context, "AI Song Generated & Added to Player!", Toast.LENGTH_SHORT).show()
+                                                
+                                                if (onGeneratePreviewSong != null) {
+                                                    val created = onGeneratePreviewSong(prompt, genreFinal, selectedVibe, customLyrics)
+                                                    isGeneratingSong = false
+                                                    if (created != null) {
+                                                        previewSong = created
+                                                        Toast.makeText(context, "গান সফলভাবে তৈরি হয়েছে! প্রিভিউ শুনুন।", Toast.LENGTH_SHORT).show()
+                                                    } else {
+                                                        Toast.makeText(context, "গান তৈরিতে সমস্যা হয়েছে, অনুগ্রহ করে আবার চেষ্টা করুন।", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                } else {
+                                                    isGeneratingSong = false
+                                                    onGenerateSong(prompt, genreFinal, selectedVibe, customLyrics)
+                                                    Toast.makeText(context, "AI Song Generated & Added to Player!", Toast.LENGTH_SHORT).show()
+                                                }
                                             }
                                         },
                                         modifier = Modifier
@@ -1087,7 +1471,7 @@ fun CreateSongScreen(
                                     ) {
                                         Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = null)
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Generate Full AI Song (Suno v4)", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                        Text("Generate Full AI Song (গান তৈরি করুন)", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -1164,23 +1548,37 @@ fun CreateSongScreen(
                                                 Text("GPT-4o Lyrics")
                                             }
 
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        isTranscribingAudio = true
-                                                        delay(800)
-                                                        customLyrics = "[Whisper Audio to Lyrics]\nTranscribed audio from mic."
-                                                        isTranscribingAudio = false
-                                                        Toast.makeText(context, "Whisper Audio Transcribed!", Toast.LENGTH_SHORT).show()
-                                                    }
-                                                },
+                                            FilledTonalButton(
+                                                onClick = { showRhymeEngineDialog = true },
                                                 modifier = Modifier.weight(1f),
-                                                shape = RoundedCornerShape(12.dp)
+                                                shape = RoundedCornerShape(12.dp),
+                                                colors = ButtonDefaults.filledTonalButtonColors(
+                                                    containerColor = Color(0xFF10B981).copy(alpha = 0.2f),
+                                                    contentColor = Color(0xFF10B981)
+                                                )
                                             ) {
-                                                Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Icon(Icons.Default.MenuBook, contentDescription = null, modifier = Modifier.size(16.dp))
                                                 Spacer(modifier = Modifier.width(4.dp))
-                                                Text(if (isTranscribingAudio) "Transcribing..." else "Whisper Transcribe")
+                                                Text("অন্ত্যমিল ও ছন্দ")
                                             }
+                                        }
+
+                                        OutlinedButton(
+                                            onClick = {
+                                                scope.launch {
+                                                    isTranscribingAudio = true
+                                                    delay(800)
+                                                    customLyrics = "[Whisper Audio to Lyrics]\nTranscribed audio from mic."
+                                                    isTranscribingAudio = false
+                                                    Toast.makeText(context, "Whisper Audio Transcribed!", Toast.LENGTH_SHORT).show()
+                                                }
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(if (isTranscribingAudio) "Transcribing..." else "Whisper Audio Transcribe")
                                         }
                                     }
                                 }
@@ -1778,6 +2176,33 @@ fun CreateSongScreen(
                                 }
                             }
 
+                            // 11. AI Voice Auto-Tuner & Pitch Beautifier (বেসুরো কন্ঠ শ্রুতিমধুর করার জাদুকরী টুল)
+                            item {
+                                Card(
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Icon(Icons.Default.GraphicEq, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                            Text("11. AI Auto-Tune & Vocal Beautifier (বেসুরো কন্ঠ শ্রুতিমধুর)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                        }
+                                        Text("আপনার গাওয়া সাধারণ বা বেসুরো কণ্ঠকে অটো-টিউন, রাগা স্কেল কারেকশন ও স্টুডিও রিভার্ব দিয়ে মুহূর্তে মেলাডিয়াস করুন।", style = MaterialTheme.typography.bodySmall)
+
+                                        Button(
+                                            onClick = { showVocalTunerDialog = true },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text("অটো-টিউন ও ভয়েস বিউটিফায়ার খুলুন ✨", fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+
                             item { Spacer(modifier = Modifier.height(40.dp)) }
                         }
                     }
@@ -1828,6 +2253,20 @@ fun CreateSongScreen(
         }
     }
 
+    if (showVoiceCloningDialog) {
+        VoiceCloningDialog(
+            onDismiss = { showVoiceCloningDialog = false },
+            onVoiceCloned = { clonedVoiceName ->
+                val fullName = "🎤 $clonedVoiceName (AI Cloned)"
+                if (!customClonedVoices.contains(fullName)) {
+                    customClonedVoices = listOf(fullName) + customClonedVoices
+                }
+                selectedVoice = fullName
+                Toast.makeText(context, "আপনার ভয়েস সফলভাবে ক্লোন হয়েছে এবং সিলেকশনে যোগ করা হয়েছে!", Toast.LENGTH_LONG).show()
+            }
+        )
+    }
+
     if (showHummingDialog) {
         MelodyHummingDialog(
             isBangla = selectedLanguage == "Bengali",
@@ -1836,6 +2275,137 @@ fun CreateSongScreen(
                 prompt = detectedPrompt
                 primaryGenre = if (genres.contains(detectedGenre)) detectedGenre else "Folk"
                 selectedVibe = "Soulful & Melodic"
+            }
+        )
+    }
+
+    if (showVocalTunerDialog) {
+        AiVocalTunerDialog(
+            onDismiss = { showVocalTunerDialog = false },
+            onApplyTunedVocal = { vocalCharacter, scale ->
+                selectedVoice = "Auto-Tuned Voice ($vocalCharacter)"
+                prompt = if (prompt.isBlank()) "Auto-Tuned Melodious $scale Vocal Track" else "$prompt (Auto-Tuned $scale)"
+                Toast.makeText(context, "অটো-টিউন করা কন্ঠ এআই গানে যুক্ত করা হয়েছে!", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    if (showAiCoverArtDialog) {
+        AiAlbumArtGeneratorDialog(
+            songTitle = prompt.ifBlank { "New AI Hit" },
+            genre = primaryGenre,
+            onDismiss = { showAiCoverArtDialog = false },
+            onArtApplied = { newArtUrl ->
+                customCoverArtUrl = newArtUrl
+            }
+        )
+    }
+
+    if (showBeatPadDialog) {
+        VirtualInstrumentBeatPadDialog(
+            onDismiss = { showBeatPadDialog = false },
+            onSendPromptToAiSong = { beatPrompt, beatGenre ->
+                prompt = beatPrompt
+                primaryGenre = if (genres.contains(beatGenre)) beatGenre else "Folk"
+            }
+        )
+    }
+
+    if (showRhymeEngineDialog) {
+        BanglaLyricsRhymeEngineDialog(
+            onDismiss = { showRhymeEngineDialog = false },
+            onApplyLyrics = { generatedLyrics ->
+                customLyrics = generatedLyrics
+            }
+        )
+    }
+
+    if (showHummingSargamDialog) {
+        HummingToSargamTranscriptionDialog(
+            onDismiss = { showHummingSargamDialog = false },
+            onApplyMelodyPrompt = { melodyPrompt ->
+                prompt = melodyPrompt
+            }
+        )
+    }
+
+    val dummyStudioSong = SongEntity(
+        id = 999,
+        title = if (prompt.isNotBlank()) prompt else "নতুন স্টুডিও প্রজেক্ট",
+        artist = "Sur AI Creator",
+        genre = primaryGenre,
+        audioUrl = "",
+        imageUrl = customCoverArtUrl ?: "",
+        lyrics = customLyrics,
+        duration = "3:00",
+        isFavorite = false,
+        isGenerated = true
+    )
+
+    if (showLiveKaraokeDialog) {
+        LiveKaraokeVocalStudioDialog(
+            song = dummyStudioSong,
+            onDismiss = { showLiveKaraokeDialog = false }
+        )
+    }
+
+    if (showMultiTrackDawDialog) {
+        MultiTrackDawTimelineDialog(
+            song = dummyStudioSong,
+            onDismiss = { showMultiTrackDawDialog = false }
+        )
+    }
+
+    if (showGuitarChordsDialog) {
+        GuitarChordsVisualizerDialog(
+            song = dummyStudioSong,
+            onDismiss = { showGuitarChordsDialog = false }
+        )
+    }
+
+    if (showTanpuraRiyazDialog) {
+        RiyazTanpuraStudioDialog(
+            song = dummyStudioSong,
+            onDismiss = { showTanpuraRiyazDialog = false }
+        )
+    }
+
+    if (showMasteringEqDialog) {
+        AudioMasteringEqVisualizerDialog(
+            song = dummyStudioSong,
+            onDismiss = { showMasteringEqDialog = false }
+        )
+    }
+
+    if (showLyricistNotepadDialog) {
+        BengaliLyricistNotepadDialog(
+            initialLyrics = customLyrics,
+            onDismiss = { showLyricistNotepadDialog = false },
+            onUseLyrics = { lyricsText ->
+                customLyrics = lyricsText
+            }
+        )
+    }
+
+    // Instant Audio Preview Dialog after Generation
+    previewSong?.let { created ->
+        SongCreationPreviewDialog(
+            song = created,
+            isPlaying = isPlaying,
+            playbackProgress = playbackProgress,
+            durationSeconds = playbackDurationSeconds,
+            isBuffering = isBuffering,
+            onPlayPause = onPlayPause,
+            onSeek = onSeek,
+            onSaveAndOpen = {
+                previewSong = null
+                onNavigateToHome()
+            },
+            onRegenerate = {
+                previewSong = null
+            },
+            onDismiss = {
+                previewSong = null
             }
         )
     }

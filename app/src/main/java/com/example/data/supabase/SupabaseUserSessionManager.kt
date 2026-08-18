@@ -247,6 +247,58 @@ class SupabaseUserSessionManager(
     }
 
     /**
+     * Sign In with Google ID Token via Supabase Auth
+     */
+    suspend fun signInWithGoogleIdToken(
+        idTokenStr: String,
+        emailInput: String,
+        fullNameInput: String
+    ): AuthResult {
+        val email = emailInput.trim().lowercase()
+        return try {
+            var remoteAuthSuccess = false
+            if (SupabaseClientProvider.hasValidCredentials()) {
+                try {
+                    auth.signInWith(io.github.jan.supabase.auth.providers.builtin.IDToken) {
+                        this.idToken = idTokenStr
+                        this.provider = io.github.jan.supabase.auth.providers.Google
+                    }
+                    remoteAuthSuccess = auth.currentUserOrNull() != null
+                } catch (e: Exception) {
+                    Log.w(TAG, "Supabase remote google signin fallback: ${e.message}")
+                }
+            }
+
+            // Sync or create local Room user record
+            val localUser = userDao.getUserByEmail(email)
+            if (localUser != null) {
+                if (localUser.isBanned) {
+                    return AuthResult.Error("This account has been suspended by system administrators.")
+                }
+                settingsDataStore.saveUserSession(localUser.email, localUser.role)
+                _currentUserProfile.value = localUser
+                return AuthResult.Success(localUser)
+            } else {
+                val newUser = UserEntity(
+                    email = email,
+                    passwordHash = "", // Google sign in has no password
+                    fullName = fullNameInput,
+                    role = "USER",
+                    tokenBalance = 250,
+                    isBanned = false
+                )
+                userDao.insertUser(newUser)
+                settingsDataStore.saveUserSession(newUser.email, newUser.role)
+                _currentUserProfile.value = newUser
+                return AuthResult.Success(newUser)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Google sign in failure: ${e.message}", e)
+            AuthResult.Error("Sign in failed: ${e.localizedMessage ?: "Unknown error"}")
+        }
+    }
+
+    /**
      * Sign Out and clear both Supabase session tokens and local DataStore persistence
      */
     suspend fun signOut(): Result<Unit> {

@@ -83,6 +83,30 @@ class SupabaseAuthManager {
     }
 
     /**
+     * Sign In with Google ID Token
+     */
+    suspend fun signInWithGoogleIdToken(idTokenStr: String): Result<UserInfo> {
+        if (!SupabaseClientProvider.hasValidCredentials()) {
+            return Result.failure(Exception("Supabase cloud endpoint not configured. Offline mode active."))
+        }
+        return try {
+            auth.signInWith(io.github.jan.supabase.auth.providers.builtin.IDToken) {
+                this.idToken = idTokenStr
+                this.provider = io.github.jan.supabase.auth.providers.Google
+            }
+            val user = auth.currentUserOrNull()
+            if (user != null) {
+                Result.success(user)
+            } else {
+                Result.failure(Exception("Failed to retrieve user session after Google sign in."))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Google SignIn error: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Sign Out and clear session tokens
      */
     suspend fun signOut(): Result<Unit> {

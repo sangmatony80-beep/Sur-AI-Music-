@@ -260,7 +260,7 @@ fun SocialStoryGeneratorDialog(
                     } else {
                         Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Export & Share to Story", fontWeight = FontWeight.Bold)
+                        Text("Export to TikTok/Reels", fontWeight = FontWeight.Bold)
                     }
                 }
             }

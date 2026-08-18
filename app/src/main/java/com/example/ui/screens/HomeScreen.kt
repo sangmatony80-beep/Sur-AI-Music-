@@ -30,7 +30,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.local.SongEntity
+import com.example.data.util.TrackMoodHelper
+import com.example.ui.components.AiVocalTunerDialog
 import com.example.ui.components.BanglaLyricsRhymeEngineDialog
+import com.example.ui.components.MelodyHummingDialog
+import com.example.ui.components.VoiceCloningDialog
 import com.example.ui.components.DailyRewardSpinDialog
 import com.example.ui.components.EqualizerBottomSheet
 import com.example.ui.components.StemMixerBottomSheet
@@ -43,6 +47,12 @@ import com.example.ui.components.InstantMfsPaymentDialog
 import com.example.ui.components.LiveDuetStudioDialog
 import com.example.ui.components.SongItemSkeletonCard
 import com.example.ui.components.UploadAudioDialog
+import com.example.ui.components.LiveKaraokeVocalStudioDialog
+import com.example.ui.components.MultiTrackDawTimelineDialog
+import com.example.ui.components.GuitarChordsVisualizerDialog
+import com.example.ui.components.RiyazTanpuraStudioDialog
+import com.example.ui.components.AudioMasteringEqVisualizerDialog
+import com.example.ui.components.BengaliLyricistNotepadDialog
 import com.example.ui.components.rememberShimmerBrush
 import com.example.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
@@ -83,6 +93,9 @@ fun HomeScreen(
     // Dialog trigger states
     var showDailySpinDialog by remember { mutableStateOf(false) }
     var showInstantMfsDialog by remember { mutableStateOf(false) }
+    var showVoiceCloneDialog by remember { mutableStateOf(false) }
+    var showHumToMusicDialog by remember { mutableStateOf(false) }
+    var showVocalTunerDialog by remember { mutableStateOf(false) }
     var showLiveDuetDialog by remember { mutableStateOf(false) }
     var showBanglaRhymeDialog by remember { mutableStateOf(false) }
     var showUploadAudioDialog by remember { mutableStateOf(false) }
@@ -94,6 +107,13 @@ fun HomeScreen(
     var showReferralDialog by remember { mutableStateOf(false) }
     var showWatchAdDialog by remember { mutableStateOf(false) }
     var showRoyaltyCashoutDialog by remember { mutableStateOf(false) }
+    var showLiveKaraokeDialog by remember { mutableStateOf(false) }
+    var showMultiTrackDawDialog by remember { mutableStateOf(false) }
+    var showGuitarChordsDialog by remember { mutableStateOf(false) }
+    var showTanpuraRiyazDialog by remember { mutableStateOf(false) }
+    var showMasteringEqDialog by remember { mutableStateOf(false) }
+    var showLyricistNotepadDialog by remember { mutableStateOf(false) }
+    var studioSelectedSong by remember { mutableStateOf<SongEntity?>(null) }
 
     // Real-time debounce effect to query Supabase Postgrest when search query changes
     LaunchedEffect(searchQuery) {
@@ -443,6 +463,66 @@ fun HomeScreen(
                     }
                 }
 
+                // AI Voice Cloning
+                Surface(
+                    onClick = { showVoiceCloneDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFF059669).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.RecordVoiceOver, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("AI Voice Clone", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("নিজের কণ্ঠ ক্লোন করুন", fontSize = 10.sp, color = Color(0xFF10B981))
+                        }
+                    }
+                }
+
+                // Hum to Music
+                Surface(
+                    onClick = { showHumToMusicDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFD97706).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFD97706).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Mic, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("Hum to Music", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("সুর গুনগুন করে গান", fontSize = 10.sp, color = Color(0xFFF59E0B))
+                        }
+                    }
+                }
+
+                // AI Vocal Tuner & Mastering
+                Surface(
+                    onClick = { showVocalTunerDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFF7C3AED).copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF7C3AED).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color(0xFFA78BFA), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("1-Click Mastering", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("অটো-টিউন ও ফিক্স", fontSize = 10.sp, color = Color(0xFFA78BFA))
+                        }
+                    }
+                }
+
                 // Live AI Duet
                 Surface(
                     onClick = { showLiveDuetDialog = true },
@@ -625,6 +705,143 @@ fun HomeScreen(
                         }
                     }
                 }
+
+                // Live Karaoke & Vocal Remover
+                Surface(
+                    onClick = {
+                        studioSelectedSong = songs.firstOrNull()
+                        showLiveKaraokeDialog = true
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFEC4899).copy(alpha = 0.18f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEC4899).copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Mic, contentDescription = null, tint = Color(0xFFEC4899), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("লাইভ কারাওকে", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("ভোকাল রিমুভার ও রেকর্ডিং", fontSize = 10.sp, color = Color(0xFFEC4899))
+                        }
+                    }
+                }
+
+                // Multi-Track DAW Timeline
+                Surface(
+                    onClick = {
+                        studioSelectedSong = songs.firstOrNull()
+                        showMultiTrackDawDialog = true
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFF8B5CF6).copy(alpha = 0.18f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.GraphicEq, contentDescription = null, tint = Color(0xFF8B5CF6), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("মাল্টি-ট্র্যাক DAW", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("অডিও স্টেম ও টাইমলাইন", fontSize = 10.sp, color = Color(0xFFA78BFA))
+                        }
+                    }
+                }
+
+                // Guitar Chords & Fretboard Visualizer
+                Surface(
+                    onClick = {
+                        studioSelectedSong = songs.firstOrNull()
+                        showGuitarChordsDialog = true
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFF59E0B).copy(alpha = 0.18f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("গিটার কর্ড ও ট্যাব", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("Fretboard & Strumming", fontSize = 10.sp, color = Color(0xFFF59E0B))
+                        }
+                    }
+                }
+
+                // Tanpura Drone & Classical Riyaz Studio
+                Surface(
+                    onClick = {
+                        studioSelectedSong = songs.firstOrNull()
+                        showTanpuraRiyazDialog = true
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFD97706).copy(alpha = 0.18f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFD97706).copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color(0xFFFBBF24), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("তানপুরা ও রিয়াজ", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("ড্রোন ও রাগ স্কেল গাইড", fontSize = 10.sp, color = Color(0xFFFBBF24))
+                        }
+                    }
+                }
+
+                // Pro Audio Mastering & 7-Band Graphic EQ
+                Surface(
+                    onClick = {
+                        studioSelectedSong = songs.firstOrNull()
+                        showMasteringEqDialog = true
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFF06B6D4).copy(alpha = 0.18f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF06B6D4).copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Equalizer, contentDescription = null, tint = Color(0xFF06B6D4), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("মাস্টারিং ও EQ", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("7-Band EQ ও স্পেকট্রাম", fontSize = 10.sp, color = Color(0xFF22D3EE))
+                        }
+                    }
+                }
+
+                // Bengali Lyricist Pad & Rhyme Engine
+                Surface(
+                    onClick = {
+                        showLyricistNotepadDialog = true
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFF10B981).copy(alpha = 0.18f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.EditNote, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
+                        Column {
+                            Text("বাংলা গীতিকার খাতা", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                            Text("ছন্দ-মাত্রা ও অন্ত্যমিল", fontSize = 10.sp, color = Color(0xFF34D399))
+                        }
+                    }
+                }
             }
         }
 
@@ -669,7 +886,17 @@ fun HomeScreen(
                     song = song,
                     onClick = { onSongClick(song) },
                     onFavoriteClick = { onFavoriteClick(song) },
-                    onDownloadClick = { selectedSongForDownload = song }
+                    onDownloadClick = { selectedSongForDownload = song },
+                    onShareClick = {
+                        val sendIntent = android.content.Intent().apply {
+                            action = android.content.Intent.ACTION_SEND
+                            putExtra(android.content.Intent.EXTRA_SUBJECT, "Check out this song: ${song.title}")
+                            putExtra(android.content.Intent.EXTRA_TEXT, "Listen to \"${song.title}\" by ${song.artist} (${song.genre}) generated on Sur AI Music!\n\nAudio Stream: ${song.audioUrl}")
+                            type = "text/plain"
+                        }
+                        val shareIntent = android.content.Intent.createChooser(sendIntent, "Share Track via")
+                        context.startActivity(shareIntent)
+                    }
                 )
             }
         }
@@ -718,6 +945,40 @@ fun HomeScreen(
         BanglaLyricsRhymeEngineDialog(
             onDismiss = { showBanglaRhymeDialog = false },
             onApplyLyrics = { lyrics ->
+                onNavigateCreate()
+            }
+        )
+    }
+
+    // Voice Cloning Dialog
+    if (showVoiceCloneDialog) {
+        VoiceCloningDialog(
+            onDismiss = { showVoiceCloneDialog = false },
+            onVoiceCloned = { voiceName ->
+                Toast.makeText(context, "ভয়েস ক্লোন সম্পন্ন হয়েছে: $voiceName! এবার গান তৈরি করুন।", Toast.LENGTH_LONG).show()
+                onNavigateCreate()
+            }
+        )
+    }
+
+    // Hum to Music Dialog
+    if (showHumToMusicDialog) {
+        MelodyHummingDialog(
+            isBangla = isBangla,
+            onDismiss = { showHumToMusicDialog = false },
+            onApplyPrompt = { detectedPrompt, detectedGenre, _ ->
+                Toast.makeText(context, "সুর বিশ্লেষণ সম্পন্ন! স্টুডিওতে লোড করা হচ্ছে...", Toast.LENGTH_SHORT).show()
+                onNavigateCreate()
+            }
+        )
+    }
+
+    // AI Vocal Tuner / Mastering Dialog
+    if (showVocalTunerDialog) {
+        AiVocalTunerDialog(
+            onDismiss = { showVocalTunerDialog = false },
+            onApplyTunedVocal = { vocalChar, scale ->
+                Toast.makeText(context, "ভোকাল টিউন সম্পন্ন! এবার গান তৈরি করুন।", Toast.LENGTH_SHORT).show()
                 onNavigateCreate()
             }
         )
@@ -901,6 +1162,67 @@ fun HomeScreen(
             }
         )
     }
+
+    val fallbackSong = songs.firstOrNull() ?: SongEntity(
+        id = 1,
+        title = "মেঘের দেশে সুরের খেলা",
+        artist = "Sur AI Live",
+        genre = "Folk Fusion",
+        audioUrl = "",
+        imageUrl = "",
+        lyrics = "",
+        duration = "3:20",
+        isFavorite = false,
+        isGenerated = true
+    )
+
+    // Live Karaoke Studio Dialog
+    if (showLiveKaraokeDialog) {
+        LiveKaraokeVocalStudioDialog(
+            song = studioSelectedSong ?: fallbackSong,
+            onDismiss = { showLiveKaraokeDialog = false }
+        )
+    }
+
+    // Multi-Track DAW Timeline Dialog
+    if (showMultiTrackDawDialog) {
+        MultiTrackDawTimelineDialog(
+            song = studioSelectedSong ?: fallbackSong,
+            onDismiss = { showMultiTrackDawDialog = false }
+        )
+    }
+
+    // Guitar & Dotara Chords Visualizer Dialog
+    if (showGuitarChordsDialog) {
+        GuitarChordsVisualizerDialog(
+            song = studioSelectedSong ?: fallbackSong,
+            onDismiss = { showGuitarChordsDialog = false }
+        )
+    }
+
+    // Tanpura Drone & Classical Riyaz Studio
+    if (showTanpuraRiyazDialog) {
+        RiyazTanpuraStudioDialog(
+            song = studioSelectedSong ?: fallbackSong,
+            onDismiss = { showTanpuraRiyazDialog = false }
+        )
+    }
+
+    // Pro Audio Mastering & 7-Band Graphic EQ
+    if (showMasteringEqDialog) {
+        AudioMasteringEqVisualizerDialog(
+            song = studioSelectedSong ?: fallbackSong,
+            onDismiss = { showMasteringEqDialog = false }
+        )
+    }
+
+    // Bengali Lyricist Pad & Rhyme Engine
+    if (showLyricistNotepadDialog) {
+        BengaliLyricistNotepadDialog(
+            initialLyrics = studioSelectedSong?.lyrics ?: "",
+            onDismiss = { showLyricistNotepadDialog = false }
+        )
+    }
 }
 }
 
@@ -909,7 +1231,8 @@ fun SongItemCard(
     song: SongEntity,
     onClick: () -> Unit,
     onFavoriteClick: () -> Unit,
-    onDownloadClick: () -> Unit = {}
+    onDownloadClick: () -> Unit = {},
+    onShareClick: () -> Unit = {}
 ) {
     Surface(
         modifier = Modifier
@@ -951,6 +1274,7 @@ fun SongItemCard(
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
+            val primaryMood = remember(song) { TrackMoodHelper.extractMoodTags(song).firstOrNull() }
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -962,18 +1286,45 @@ fun SongItemCard(
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "${song.artist} • ${song.genre}",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "${song.artist} • ${song.genre}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    if (primaryMood != null) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = Color(primaryMood.gradientColors.first()).copy(alpha = 0.15f)
+                        ) {
+                            Text(
+                                text = "${primaryMood.emoji} ${primaryMood.nameEn}",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(primaryMood.gradientColors.first()),
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
             }
             IconButton(onClick = onDownloadClick) {
                 Icon(
                     imageVector = Icons.Default.Download,
                     contentDescription = "Download",
                     tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            IconButton(onClick = onShareClick) {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = "Share",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             IconButton(onClick = onFavoriteClick) {

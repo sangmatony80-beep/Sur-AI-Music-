@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 fun AuthScreen(
     onLogin: suspend (String, String) -> AuthResult,
     onRegister: suspend (String, String, String, String) -> AuthResult,
+    onGoogleSignIn: suspend () -> AuthResult = { AuthResult.Error("Not Implemented") },
     onGuestMode: () -> Unit
 ) {
     // Mode: 0 = Sign In, 1 = Sign Up / Register
@@ -529,6 +530,54 @@ fun AuthScreen(
                             )
                             Text(
                                 text = if (isSignUp) "Create Account & Enter Feed" else "Sign In & Access Music Feed",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Google Sign In Button
+                Button(
+                    onClick = {
+                        isLoading = true
+                        errorMessage = null
+                        successMessage = null
+                        coroutineScope.launch {
+                            val result = onGoogleSignIn()
+                            isLoading = false
+                            if (result is AuthResult.Success) {
+                                successMessage = "Google Authentication successful!"
+                            } else if (result is AuthResult.Error) {
+                                errorMessage = result.message
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .testTag("google_auth_button"),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            strokeWidth = 2.5.dp
+                        )
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Continue with Google",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
                             )

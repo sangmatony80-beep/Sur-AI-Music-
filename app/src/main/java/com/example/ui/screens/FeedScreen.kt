@@ -1,7 +1,9 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,13 +13,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Tune
@@ -29,6 +34,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
@@ -37,6 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.local.SongEntity
+import com.example.data.util.MoodTagInfo
+import com.example.data.util.TrackMoodHelper
 import com.example.ui.components.TrackFeedSkeletonCard
 import com.example.ui.components.rememberShimmerBrush
 
@@ -49,8 +57,10 @@ fun FeedScreen(
     isLoading: Boolean = false,
     onRefresh: (() -> Unit)? = null
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val shimmerBrush = rememberShimmerBrush()
     var selectedGenre by remember { mutableStateOf("All") }
+    var selectedMoodId by remember { mutableStateOf("all") }
     val pullToRefreshState = rememberPullToRefreshState()
 
     // Aggregate genres present in Supabase feed plus popular AI styles
@@ -63,13 +73,22 @@ fun FeedScreen(
         combined
     }
 
-    // Filter songs based on selected genre chip
-    val filteredSongs = remember(selectedGenre, songs) {
-        if (selectedGenre == "All") {
-            songs
-        } else {
-            songs.filter { it.genre.contains(selectedGenre, ignoreCase = true) }
+    // Filter songs based on both selected Mood tag and Genre chip
+    val filteredSongs = remember(selectedMoodId, selectedGenre, songs) {
+        songs.filter { song ->
+            val matchesGenre = if (selectedGenre == "All") true else song.genre.contains(selectedGenre, ignoreCase = true)
+            val matchesMood = if (selectedMoodId == "all") {
+                true
+            } else {
+                val songMoods = TrackMoodHelper.extractMoodTags(song)
+                songMoods.any { it.id == selectedMoodId }
+            }
+            matchesGenre && matchesMood
         }
+    }
+
+    val activeMood = remember(selectedMoodId) {
+        TrackMoodHelper.PRESET_MOODS.find { it.id == selectedMoodId } ?: TrackMoodHelper.PRESET_MOODS.first()
     }
 
     PullToRefreshBox(
@@ -186,6 +205,118 @@ fun FeedScreen(
                 }
             }
 
+            // AI Mood & Vibe Filter Section
+            item {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Psychology,
+                                contentDescription = null,
+                                tint = Color(0xFFEC4899),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = "AI Mood & Vibe Filter",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+
+                        if (selectedMoodId != "all") {
+                            TextButton(
+                                onClick = { selectedMoodId = "all" },
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier.height(28.dp)
+                            ) {
+                                Icon(Icons.Default.Clear, contentDescription = null, modifier = Modifier.size(12.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Reset Mood", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .testTag("feed_mood_chips_row"),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TrackMoodHelper.PRESET_MOODS.forEach { mood ->
+                            val isSelected = selectedMoodId == mood.id
+                            val count = remember(songs, mood.id) {
+                                if (mood.id == "all") songs.size
+                                else songs.count { song ->
+                                    TrackMoodHelper.extractMoodTags(song).any { it.id == mood.id }
+                                }
+                            }
+
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    selectedMoodId = if (isSelected && mood.id != "all") "all" else mood.id
+                                },
+                                label = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(mood.emoji, fontSize = 14.sp)
+                                        Text(
+                                            text = mood.nameEn,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                        )
+                                        if (count > 0) {
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = if (isSelected) {
+                                                    Color.White.copy(alpha = 0.25f)
+                                                } else {
+                                                    MaterialTheme.colorScheme.surfaceVariant
+                                                }
+                                            ) {
+                                                Text(
+                                                    text = "$count",
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                    }
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(mood.gradientColors.first()),
+                                    selectedLabelColor = Color.White,
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    labelColor = MaterialTheme.colorScheme.onSurface
+                                ),
+                                shape = RoundedCornerShape(14.dp),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = isSelected,
+                                    borderColor = if (isSelected) Color(mood.gradientColors.first()) else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                ),
+                                modifier = Modifier.testTag("feed_mood_chip_${mood.id}")
+                            )
+                        }
+                    }
+                }
+            }
+
             // Row of Genre Filter Chips for style discovery
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -213,9 +344,9 @@ fun FeedScreen(
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                         }
-                        if (selectedGenre != "All") {
+                        if (selectedGenre != "All" || selectedMoodId != "all") {
                             Text(
-                                text = "${filteredSongs.size} matching",
+                                text = "${filteredSongs.size} matching tracks",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Medium
@@ -303,6 +434,56 @@ fun FeedScreen(
                 }
             }
 
+            // Active Filter summary pill banner if any filter is active
+            if (selectedMoodId != "all" || selectedGenre != "All") {
+                item {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.FilterAlt,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                val moodLabel = if (selectedMoodId != "all") "${activeMood.emoji} ${activeMood.nameEn}" else ""
+                                val genreLabel = if (selectedGenre != "All") "Style: $selectedGenre" else ""
+                                val combinedLabel = listOf(moodLabel, genreLabel).filter { it.isNotBlank() }.joinToString(" • ")
+                                Text(
+                                    text = "Filtered by: $combinedLabel (${filteredSongs.size} found)",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    selectedMoodId = "all"
+                                    selectedGenre = "All"
+                                },
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                                modifier = Modifier.height(24.dp)
+                            ) {
+                                Text("Clear All", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+
             // Skeleton loading components shown while fetching data from Supabase
             if (isLoading) {
                 items(3) {
@@ -317,7 +498,7 @@ fun FeedScreen(
                             .testTag("feed_empty_genre_state"),
                         shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
                     ) {
                         Column(
                             modifier = Modifier
@@ -327,25 +508,28 @@ fun FeedScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.MusicNote,
+                                imageVector = Icons.Default.Psychology,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(48.dp)
                             )
                             Text(
-                                text = "No $selectedGenre Tracks Found",
+                                text = "No Tracks Matching Filters",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
-                                text = "There are currently no community tracks tagged with '$selectedGenre'. Select another style or reset to browse all.",
+                                text = "No tracks found for mood '${activeMood.nameEn}' and style '$selectedGenre'. Try selecting another AI mood tag or reset filters.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                             Button(
-                                onClick = { selectedGenre = "All" },
+                                onClick = {
+                                    selectedMoodId = "all"
+                                    selectedGenre = "All"
+                                },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                             ) {
@@ -356,6 +540,7 @@ fun FeedScreen(
                 }
             } else {
                 items(filteredSongs) { song ->
+                    val trackMoods = remember(song) { TrackMoodHelper.extractMoodTags(song) }
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -428,7 +613,50 @@ fun FeedScreen(
                                     )
                                 }
                             }
+
                             Spacer(modifier = Modifier.height(12.dp))
+
+                            // AI Generated Mood Tags Pills on Card
+                            if (trackMoods.isNotEmpty()) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    trackMoods.forEach { mood ->
+                                        val isTagActive = selectedMoodId == mood.id
+                                        Surface(
+                                            onClick = {
+                                                selectedMoodId = if (isTagActive) "all" else mood.id
+                                            },
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = if (isTagActive) Color(mood.gradientColors.first()) else Color(mood.gradientColors.first()).copy(alpha = 0.15f),
+                                            border = BorderStroke(
+                                                1.dp,
+                                                if (isTagActive) Color(mood.gradientColors.first()) else Color(mood.gradientColors.first()).copy(alpha = 0.4f)
+                                            )
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                Text(text = mood.emoji, fontSize = 11.sp)
+                                                Text(
+                                                    text = "${mood.nameEn} • ${mood.nameBn}",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = if (isTagActive) FontWeight.Bold else FontWeight.Medium,
+                                                    color = if (isTagActive) Color.White else Color(mood.gradientColors.first())
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
                             Text(
                                 text = song.title,
                                 fontWeight = FontWeight.Bold,
@@ -466,7 +694,16 @@ fun FeedScreen(
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
-                                    IconButton(onClick = { }) {
+                                    IconButton(onClick = {
+                                        val sendIntent = android.content.Intent().apply {
+                                            action = android.content.Intent.ACTION_SEND
+                                            putExtra(android.content.Intent.EXTRA_SUBJECT, "Check out this song: ${song.title}")
+                                            putExtra(android.content.Intent.EXTRA_TEXT, "Listen to \"${song.title}\" by ${song.artist} (${song.genre}) generated on Sur AI Music!\n\nAudio Stream: ${song.audioUrl}")
+                                            type = "text/plain"
+                                        }
+                                        val shareIntent = android.content.Intent.createChooser(sendIntent, "Share Track via")
+                                        context.startActivity(shareIntent)
+                                    }) {
                                         Icon(
                                             imageVector = Icons.Default.Share,
                                             contentDescription = "Share",

@@ -14,9 +14,10 @@ import androidx.room.RoomDatabase
         TokenTransactionEntity::class,
         DailyUsageEntity::class,
         LyricsHistoryEntity::class,
-        ClonedVoiceEntity::class
+        ClonedVoiceEntity::class,
+        VoiceRecordEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class SurMusicDatabase : RoomDatabase() {
@@ -24,6 +25,7 @@ abstract class SurMusicDatabase : RoomDatabase() {
     abstract fun musicDao(): MusicDao
     abstract fun planDao(): PlanDao
     abstract fun lyricsDao(): LyricsDao
+    abstract fun voiceRecordDao(): VoiceRecordDao
 
     companion object {
         @Volatile

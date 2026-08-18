@@ -56,6 +56,7 @@ fun LeftDrawerContent(
         add(DrawerMenuItem("create_lyrics", "লিরিক্স স্টুডিও ও ট্রান্সক্রাইব", "Lyrics Studio & Transcribe", Icons.Default.EditNote, "AI_STUDIO"))
         add(DrawerMenuItem("create_adv", "এডভান্সড এআই ১০ ফিচার", "Advanced AI Tech (10)", Icons.Default.Psychology, "AI_STUDIO", "PRO"))
         add(DrawerMenuItem("create_stems", "প্রো স্টেম ও ডিজে টুলকিট", "Pro Stems & Mixer", Icons.Default.GraphicEq, "AI_STUDIO"))
+        add(DrawerMenuItem("voice_correction", "ভয়েস কারেকশন ও টিউনিং", "Voice Correction & Tuning", Icons.Default.Tune, "AI_STUDIO", "HOT"))
         add(DrawerMenuItem("video_visual", "ভিডিও ও ভিজ্যুয়াল স্টুডিও (১৫)", "Video & Visual Studio (15)", Icons.Default.Videocam, "AI_STUDIO", "NEW"))
         add(DrawerMenuItem("social_collab", "সোশ্যাল ও কোলাব স্টুডিও (১৫)", "Social & Collab (15)", Icons.Default.Groups, "AI_STUDIO", "HOT"))
         add(DrawerMenuItem("global_lang", "গ্লোবাল ও ভাষা স্টুডিও (৬)", "Global & Language (6)", Icons.Default.Translate, "AI_STUDIO", "NEW"))

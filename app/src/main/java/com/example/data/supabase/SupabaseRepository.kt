@@ -264,4 +264,39 @@ class SupabaseRepository {
             Log.e(TAG, "Unsubscribe error: ${e.message}", e)
         }
     }
+
+    /**
+     * Fetch all voice records from Supabase PostgreSQL table
+     */
+    suspend fun fetchVoiceRecords(): Result<List<RemoteVoiceRecordItem>> {
+        if (!SupabaseClientProvider.hasValidCredentials()) {
+            return Result.success(emptyList())
+        }
+        return try {
+            val records = postgrest["voice_records"]
+                .select()
+                .decodeList<RemoteVoiceRecordItem>()
+            Result.success(records)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching voice records from Supabase Postgrest: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Upsert / Publish voice record metadata into Supabase PostgreSQL table
+     */
+    suspend fun publishVoiceRecord(record: RemoteVoiceRecordItem): Result<Unit> {
+        if (!SupabaseClientProvider.hasValidCredentials()) {
+            return Result.success(Unit)
+        }
+        return try {
+            postgrest["voice_records"].insert(record)
+            Log.i(TAG, "Voice record synchronized with Supabase PostgreSQL: ${record.title}")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error synchronizing voice record with Supabase: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
 }
