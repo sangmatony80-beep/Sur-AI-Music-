@@ -162,6 +162,19 @@ fun SurMusicApp(viewModel: MainViewModel) {
                             }
                             res
                         },
+                        onFacebookSignIn = {
+                            val res = viewModel.loginWithFacebook()
+                            if (res is com.example.data.repository.AuthResult.Error) {
+                                viewModel.showGlobalError(
+                                    title = if (appLanguage == "bn") "ফেইসবুক লগইন ব্যর্থ হয়েছে" else "Facebook Sign-In Failed",
+                                    message = res.message,
+                                    category = com.example.ui.components.ErrorCategory.AUTHENTICATION,
+                                    severity = com.example.ui.components.ErrorSeverity.ERROR,
+                                    autoDismissMillis = 6000L
+                                )
+                            }
+                            res
+                        },
                         onGuestMode = {
                             viewModel.loginGuest()
                             currentScreen = "home"

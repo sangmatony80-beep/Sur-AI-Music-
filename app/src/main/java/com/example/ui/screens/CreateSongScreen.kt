@@ -51,6 +51,8 @@ import com.example.ui.components.GuitarChordsVisualizerDialog
 import com.example.ui.components.RiyazTanpuraStudioDialog
 import com.example.ui.components.AudioMasteringEqVisualizerDialog
 import com.example.ui.components.BengaliLyricistNotepadDialog
+import com.example.ui.components.AdvancedAiPromptBuilderDialog
+import com.example.ui.components.SunoLyricsGeneratorDialog
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -137,6 +139,8 @@ fun CreateSongScreen(
     var showTanpuraRiyazDialog by rememberSaveable { mutableStateOf(false) }
     var showMasteringEqDialog by rememberSaveable { mutableStateOf(false) }
     var showLyricistNotepadDialog by rememberSaveable { mutableStateOf(false) }
+    var showAdvancedPromptBuilderDialog by rememberSaveable { mutableStateOf(false) }
+    var showSunoLyricsDialog by rememberSaveable { mutableStateOf(false) }
     var customCoverArtUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var customClonedVoices by remember { mutableStateOf(listOf<String>()) }
     var previewSong by remember { mutableStateOf<SongEntity?>(null) }
@@ -305,8 +309,15 @@ fun CreateSongScreen(
         AiVoiceModel("Kabir (Ghazal Maestro)", "Male", "♂", "Warm Classical Baritone", "Urdu / Hindi / Bangla", "Rich vibrato, poetic nuance & sentimental depth", "Ghazal, Classical, Nazrul"),
         AiVoiceModel("Ayan (Hip-Hop Flow)", "Male", "♂", "Rhythmic Rap Flow", "Urban Desi & English", "Fast, punchy syllables & drill/trap attitude", "Hip-Hop, Trap, Drill"),
         AiVoiceModel("Tanvir (Rock Screamer)", "Male", "♂", "Gritty Rock Lead", "Bengali Rock", "Rasp, edge & stadium rock energy", "Alternative Rock, Grunge, Metal"),
+        AiVoiceModel("Mehedi (Acoustic Troubadour)", "Male", "♂", "Warm Folk Baritone", "Bangla Folk", "Intimate campfire storytelling & unplugged acoustic feel", "Acoustic, Unplugged, Folk"),
 
-        // SPECIAL / AI HYBRID
+        // CHILDREN'S VOICES (শিশু কণ্ঠ / Kids Voice Models)
+        AiVoiceModel("Robi (Kids Joyful Voice)", "Child", "🧒", "Bright Kid Soprano", "Bangla & English", "Pure, joyful, innocent child vocal tone for rhymes & cheerful songs", "Children Rhymes, Happy Pop, Acoustic"),
+        AiVoiceModel("Tuli (Child Melody Angel)", "Child", "🧒", "Sweet Choral Kid", "Bangla Traditional", "Innocent, sweet choir & chorus child voice", "Lullaby, Folk Rhymes, Acoustic"),
+        AiVoiceModel("Timmy (Little Pop Star)", "Child", "🧒", "Upbeat Kid Vocal", "English & Global", "High-energy, playful & vibrant young star voice", "Kids Pop, Upbeat, Animation Songs"),
+
+        // SPECIAL / AI HYBRID & ENSEMBLE
+        AiVoiceModel("Celestial Choir & Ensemble", "Ensemble", "👥", "Multi-Voice Harmony", "Global Choral", "Lush multi-part choral harmonies & cathedral reverb", "Ambient, Choral, Cinematic"),
         AiVoiceModel("CyberVoice X-9", "Special", "✨", "Robotic Harmonizer", "AI Synth", "Futuristic vocoder & multi-layered AI chorus", "Techno, House, EDM"),
         AiVoiceModel("Suno AI v4 Prime", "Special", "✨", "Adaptive Multi-Range", "Multi-Lingual", "Dynamic neural vocal engine matching any prompt style", "All Genres")
     )
@@ -431,6 +442,43 @@ fun CreateSongScreen(
                                         }
                                     }
                                 )
+                            }
+
+                            item {
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = Color(0xFF8B5CF6).copy(alpha = 0.15f),
+                                    border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.5f)),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { showAdvancedPromptBuilderDialog = true }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = Color(0xFF8B5CF6),
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Tune,
+                                                    contentDescription = null,
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("অ্যাডভান্সড প্রম্পট বিল্ডার (Advanced Prompt Builder)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.White)
+                                            Text("জেনার, মুড, BPM ও ইনস্ট্রুমেন্টেশন নিখুঁতভাবে সেট করুন ✨", fontSize = 11.sp, color = Color(0xFFA78BFA))
+                                        }
+                                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF8B5CF6))
+                                    }
+                                }
                             }
 
                             item {
@@ -1528,6 +1576,16 @@ fun CreateSongScreen(
                                 ) {
                                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                         Text("AI Generator & Whisper Transcribe", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                        Button(
+                                            onClick = { showSunoLyricsDialog = true },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6))
+                                        ) {
+                                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text("✨ সুনো এআই স্ট্রাকচারড লিরিক্স জেনারেটর", fontWeight = FontWeight.Bold)
+                                        }
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -2383,6 +2441,27 @@ fun CreateSongScreen(
             onDismiss = { showLyricistNotepadDialog = false },
             onUseLyrics = { lyricsText ->
                 customLyrics = lyricsText
+            }
+        )
+    }
+
+    if (showSunoLyricsDialog) {
+        SunoLyricsGeneratorDialog(
+            initialPrompt = prompt,
+            onDismiss = { showSunoLyricsDialog = false },
+            onApplyLyrics = { generatedLyrics ->
+                customLyrics = generatedLyrics
+            }
+        )
+    }
+
+    if (showAdvancedPromptBuilderDialog) {
+        AdvancedAiPromptBuilderDialog(
+            onDismiss = { showAdvancedPromptBuilderDialog = false },
+            onApplyPrompt = { constructedPrompt, genre, vibe, bpmVal, instrumentation ->
+                prompt = constructedPrompt
+                primaryGenre = genre
+                selectedVibe = vibe
             }
         )
     }

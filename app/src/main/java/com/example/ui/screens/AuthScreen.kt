@@ -34,6 +34,7 @@ fun AuthScreen(
     onLogin: suspend (String, String) -> AuthResult,
     onRegister: suspend (String, String, String, String) -> AuthResult,
     onGoogleSignIn: suspend () -> AuthResult = { AuthResult.Error("Not Implemented") },
+    onFacebookSignIn: suspend () -> AuthResult = { AuthResult.Error("Not Implemented") },
     onGuestMode: () -> Unit
 ) {
     // Mode: 0 = Sign In, 1 = Sign Up / Register
@@ -576,8 +577,58 @@ fun AuthScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            Icon(Icons.Default.Public, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(
                                 text = "Continue with Google",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Facebook Sign In Button
+                Button(
+                    onClick = {
+                        isLoading = true
+                        errorMessage = null
+                        successMessage = null
+                        coroutineScope.launch {
+                            val result = onFacebookSignIn()
+                            isLoading = false
+                            if (result is AuthResult.Success) {
+                                successMessage = "Facebook Authentication successful!"
+                            } else if (result is AuthResult.Error) {
+                                errorMessage = result.message
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .testTag("facebook_auth_button"),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1877F2),
+                        contentColor = Color.White
+                    )
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White,
+                            strokeWidth = 2.5.dp
+                        )
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.Facebook, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text(
+                                text = "Continue with Facebook",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
                             )
