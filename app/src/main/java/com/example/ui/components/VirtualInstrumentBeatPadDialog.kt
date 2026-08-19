@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ai.audio.infrastructure.synth.RealtimeAudioSynthEngine
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -88,12 +89,20 @@ fun VirtualInstrumentBeatPadDialog(
         )
     }
 
-    // Step sequencer loop simulation
+    // Step sequencer loop audio playback
     LaunchedEffect(isLoopPlaying, bpm) {
         if (isLoopPlaying) {
             val stepDelayMs = (60000 / (bpm * 4)).toLong()
             while (isLoopPlaying) {
                 activeStep = (activeStep + 1) % 16
+                // Trigger real acoustic rhythm on sequencer steps
+                when (activeStep) {
+                    0, 8 -> RealtimeAudioSynthEngine.triggerPad("p9") // 808 Kick
+                    4, 12 -> RealtimeAudioSynthEngine.triggerPad("p10") // Snare
+                    2, 6, 10, 14 -> RealtimeAudioSynthEngine.triggerPad("p11") // Hi-hat
+                    1, 5, 9, 13 -> RealtimeAudioSynthEngine.triggerPad("p1") // Tabla Dha
+                    7, 15 -> RealtimeAudioSynthEngine.triggerPad("p2") // Tabla Na
+                }
                 delay(stepDelayMs)
             }
         }
@@ -237,11 +246,11 @@ fun VirtualInstrumentBeatPadDialog(
                                 .height(76.dp)
                                 .clickable {
                                     lastTriggeredPad = pad.id
+                                    RealtimeAudioSynthEngine.triggerPad(pad.id)
                                     scope.launch {
                                         delay(150)
                                         if (lastTriggeredPad == pad.id) lastTriggeredPad = null
                                     }
-                                    Toast.makeText(context, "🎵 ${pad.nameBn} (${pad.nameEn})", Toast.LENGTH_SHORT).show()
                                 }
                         ) {
                             Column(

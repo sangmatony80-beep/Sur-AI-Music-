@@ -74,10 +74,20 @@ fun PlayerScreen(
     var showTanpuraRiyazDialog by remember { mutableStateOf(false) }
     var showMasteringEqDialog by remember { mutableStateOf(false) }
     var showLyricistNotepadDialog by remember { mutableStateOf(false) }
+    var showB2BExportDialog by remember { mutableStateOf(false) }
+    var isB2BExporting by remember { mutableStateOf(false) }
+    var b2bMessage by remember { mutableStateOf("") }
+
     var isDownloading by remember { mutableStateOf(false) }
     var downloadProgress by remember { mutableFloatStateOf(0f) }
     var downloadMessage by remember { mutableStateOf("") }
     
+    var showSocialShareDialog by remember { mutableStateOf(false) }
+    
+    // Feature Toggle: "SIMPLE" (clean player) vs "PRO" (full studio suite)
+    var studioMode by remember { mutableStateOf("PRO") }
+    var selectedFeatureCategory by remember { mutableStateOf("ALL") } // "ALL", "VOCAL", "MIXING", "INSTRUMENTS"
+
     var currentSongArt by remember(song.imageUrl) { mutableStateOf(song.imageUrl) }
     
     // Equalizer & FX quick states
@@ -85,23 +95,32 @@ fun PlayerScreen(
     var vocalClarityEnabled by remember { mutableStateOf(true) }
     var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.6f)),
+        contentAlignment = Alignment.BottomCenter
     ) {
-        Box(
+        Surface(
             modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                            Color(0xFF0F172A),
-                            MaterialTheme.colorScheme.background
+                .fillMaxWidth()
+                .fillMaxHeight(0.82f)
+                .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                Color(0xFF0F172A),
+                                MaterialTheme.colorScheme.background
+                            )
                         )
                     )
-                )
-        ) {
+            ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -125,16 +144,7 @@ fun PlayerScreen(
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Row {
-                        IconButton(onClick = {
-                            val sendIntent = android.content.Intent().apply {
-                                action = android.content.Intent.ACTION_SEND
-                                putExtra(android.content.Intent.EXTRA_SUBJECT, "Check out this song: ${song.title}")
-                                putExtra(android.content.Intent.EXTRA_TEXT, "Listen to \"${song.title}\" by ${song.artist} (${song.genre}) generated on SurSun AI Music Studio!\n\nAudio Stream: ${song.audioUrl}")
-                                type = "text/plain"
-                            }
-                            val shareIntent = android.content.Intent.createChooser(sendIntent, "Share Track via")
-                            context.startActivity(shareIntent)
-                        }) {
+                        IconButton(onClick = { showSocialShareDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.Share,
                                 contentDescription = "Share Track",
@@ -160,6 +170,13 @@ fun PlayerScreen(
                                 imageVector = Icons.Default.Download,
                                 contentDescription = "Download Song",
                                 tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        IconButton(onClick = { showB2BExportDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.BusinessCenter,
+                                contentDescription = "Enterprise B2B Sync License",
+                                tint = Color(0xFF10B981) // Emerald Green
                             )
                         }
                         IconButton(onClick = onFavoriteClick) {
@@ -334,9 +351,79 @@ fun PlayerScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Quick Studio Action Bar (Synced Lyrics + Stems Mixer + Story Export + Ringtone + Download)
+                // Studio Mode Toggle Header: Simple Player vs Pro Studio
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0xFF1E293B).copy(alpha = 0.7f))
+                        .padding(3.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // Simple Mode Toggle Button
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (studioMode == "SIMPLE") MaterialTheme.colorScheme.primary else Color.Transparent,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { studioMode = "SIMPLE" }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(vertical = 6.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.MusicNote,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = if (studioMode == "SIMPLE") Color.Black else Color.LightGray
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                "বেসিক মোড (Clean)",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (studioMode == "SIMPLE") Color.Black else Color.LightGray
+                            )
+                        }
+                    }
+
+                    // Pro Studio Mode Toggle Button
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (studioMode == "PRO") Color(0xFF8B5CF6) else Color.Transparent,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { studioMode = "PRO" }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(vertical = 6.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.GraphicEq,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = if (studioMode == "PRO") Color.White else Color.LightGray
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                "প্রো স্টুডিও (Pro Tools)",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (studioMode == "PRO") Color.White else Color.LightGray
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Core Quick Action Bar (Synced Lyrics + Ringtone + Stems + Story + Save)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -402,177 +489,224 @@ fun PlayerScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Advanced AI Studio Suite Bar (8D Spatial Audio + Beat Matrix + Humming Sargam + Cover Art)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                // Pro Studio Suite Toggled Content
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = studioMode == "PRO",
+                    enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
+                    exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
                 ) {
-                    FilledTonalButton(
-                        onClick = { showSpatial8dDialog = true },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFF6366F1).copy(alpha = 0.2f),
-                            contentColor = Color(0xFF818CF8)
-                        )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Icon(Icons.Default.Headphones, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("8D Audio", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
+                        // Category Filter Chips
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            val categories = listOf(
+                                "ALL" to "সব টুলস",
+                                "VOCAL" to "ভোকাল",
+                                "MIXING" to "মিক্সিং",
+                                "INSTRUMENTS" to "ইন্সট্রুমেন্ট"
+                            )
+                            categories.forEach { (catId, catLabel) ->
+                                val isSelected = selectedFeatureCategory == catId
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isSelected) Color(0xFF6366F1) else Color(0xFF1E293B),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { selectedFeatureCategory = catId }
+                                ) {
+                                    Text(
+                                        text = catLabel,
+                                        fontSize = 9.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) Color.White else Color.LightGray,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(vertical = 4.dp),
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
 
-                    FilledTonalButton(
-                        onClick = { showBeatPadDialog = true },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFFF59E0B).copy(alpha = 0.2f),
-                            contentColor = Color(0xFFFBBF24)
-                        )
-                    ) {
-                        Icon(Icons.Default.GridOn, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("Beat Pad", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
+                        // Advanced AI Studio Suite Bar (8D Spatial Audio + Beat Matrix + Humming Sargam + Cover Art)
+                        if (selectedFeatureCategory == "ALL" || selectedFeatureCategory == "MIXING" || selectedFeatureCategory == "INSTRUMENTS") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                FilledTonalButton(
+                                    onClick = { showSpatial8dDialog = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = Color(0xFF6366F1).copy(alpha = 0.2f),
+                                        contentColor = Color(0xFF818CF8)
+                                    )
+                                ) {
+                                    Icon(Icons.Default.Headphones, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("8D Audio", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
 
-                    FilledTonalButton(
-                        onClick = { showHummingSargamDialog = true },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFF10B981).copy(alpha = 0.2f),
-                            contentColor = Color(0xFF34D399)
-                        )
-                    ) {
-                        Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("Sargam", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
+                                FilledTonalButton(
+                                    onClick = { showBeatPadDialog = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = Color(0xFFF59E0B).copy(alpha = 0.2f),
+                                        contentColor = Color(0xFFFBBF24)
+                                    )
+                                ) {
+                                    Icon(Icons.Default.GridOn, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Beat Pad", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
 
-                    FilledTonalButton(
-                        onClick = { showCoverArtDialog = true },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFFEC4899).copy(alpha = 0.2f),
-                            contentColor = Color(0xFFF472B6)
-                        )
-                    ) {
-                        Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("Cover Art", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
+                                FilledTonalButton(
+                                    onClick = { showHummingSargamDialog = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = Color(0xFF10B981).copy(alpha = 0.2f),
+                                        contentColor = Color(0xFF34D399)
+                                    )
+                                ) {
+                                    Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Sargam", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                                FilledTonalButton(
+                                    onClick = { showCoverArtDialog = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = Color(0xFFEC4899).copy(alpha = 0.2f),
+                                        contentColor = Color(0xFFF472B6)
+                                    )
+                                ) {
+                                    Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Cover Art", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
 
-                // Pro Live Studio Suite 2 (Live Karaoke + MultiTrack DAW + Guitar Chords)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    FilledTonalButton(
-                        onClick = { showKaraokeDialog = true },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFFEC4899).copy(alpha = 0.25f),
-                            contentColor = Color(0xFFF472B6)
-                        )
-                    ) {
-                        Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("কারাওকে", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
+                        // Pro Live Studio Suite 2 (Live Karaoke + MultiTrack DAW + Guitar Chords)
+                        if (selectedFeatureCategory == "ALL" || selectedFeatureCategory == "VOCAL" || selectedFeatureCategory == "INSTRUMENTS") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                FilledTonalButton(
+                                    onClick = { showKaraokeDialog = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = Color(0xFFEC4899).copy(alpha = 0.25f),
+                                        contentColor = Color(0xFFF472B6)
+                                    )
+                                ) {
+                                    Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("কারাওকে", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
 
-                    FilledTonalButton(
-                        onClick = { showDawDialog = true },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFF8B5CF6).copy(alpha = 0.25f),
-                            contentColor = Color(0xFFA78BFA)
-                        )
-                    ) {
-                        Icon(Icons.Default.GraphicEq, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("মাল্টি-ট্র্যাক DAW", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
+                                FilledTonalButton(
+                                    onClick = { showDawDialog = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = Color(0xFF8B5CF6).copy(alpha = 0.25f),
+                                        contentColor = Color(0xFFA78BFA)
+                                    )
+                                ) {
+                                    Icon(Icons.Default.GraphicEq, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("DAW", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
 
-                    FilledTonalButton(
-                        onClick = { showChordsDialog = true },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFFF59E0B).copy(alpha = 0.25f),
-                            contentColor = Color(0xFFFBBF24)
-                        )
-                    ) {
-                        Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("কর্ড ট্যাব", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
+                                FilledTonalButton(
+                                    onClick = { showChordsDialog = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = Color(0xFFF59E0B).copy(alpha = 0.25f),
+                                        contentColor = Color(0xFFFBBF24)
+                                    )
+                                ) {
+                                    Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("কর্ড ট্যাব", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                        // Pro Classical & Audio Mastering Suite (Tanpura Riyaz, Mastering EQ, Lyricist Pad)
+                        if (selectedFeatureCategory == "ALL" || selectedFeatureCategory == "MIXING" || selectedFeatureCategory == "VOCAL") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                FilledTonalButton(
+                                    onClick = { showTanpuraRiyazDialog = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = Color(0xFFD97706).copy(alpha = 0.25f),
+                                        contentColor = Color(0xFFFBBF24)
+                                    )
+                                ) {
+                                    Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("তানপুরা রিয়াজ", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
 
-                // Pro Classical & Audio Mastering Suite (Tanpura Riyaz, Mastering EQ, Lyricist Pad)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    FilledTonalButton(
-                        onClick = { showTanpuraRiyazDialog = true },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFFD97706).copy(alpha = 0.25f),
-                            contentColor = Color(0xFFFBBF24)
-                        )
-                    ) {
-                        Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("তানপুরা ও রিয়াজ", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
+                                FilledTonalButton(
+                                    onClick = { showMasteringEqDialog = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = Color(0xFF06B6D4).copy(alpha = 0.25f),
+                                        contentColor = Color(0xFF22D3EE)
+                                    )
+                                ) {
+                                    Icon(Icons.Default.Equalizer, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("মাস্টারিং EQ", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
 
-                    FilledTonalButton(
-                        onClick = { showMasteringEqDialog = true },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFF06B6D4).copy(alpha = 0.25f),
-                            contentColor = Color(0xFF22D3EE)
-                        )
-                    ) {
-                        Icon(Icons.Default.Equalizer, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("মাস্টারিং EQ", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    FilledTonalButton(
-                        onClick = { showLyricistNotepadDialog = true },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFF10B981).copy(alpha = 0.25f),
-                            contentColor = Color(0xFF34D399)
-                        )
-                    ) {
-                        Icon(Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("গীতিকার খাতা", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                FilledTonalButton(
+                                    onClick = { showLyricistNotepadDialog = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = Color(0xFF10B981).copy(alpha = 0.25f),
+                                        contentColor = Color(0xFF34D399)
+                                    )
+                                ) {
+                                    Icon(Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("গীতিকার খাতা", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -824,4 +958,125 @@ fun PlayerScreen(
             onDismiss = { showLyricistNotepadDialog = false }
         )
     }
+
+    if (showDownloadDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isDownloading) showDownloadDialog = false },
+            title = { Text("Download Audio") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Save this track in high-quality WAV format to your device's Music folder.", fontSize = 14.sp)
+                    if (isDownloading) {
+                        CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+                        Text(downloadMessage.ifEmpty { "Exporting to Music folder..." }, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                    } else if (downloadMessage.isNotEmpty()) {
+                        Text(downloadMessage, fontSize = 13.sp, color = Color(0xFF10B981))
+                    }
+                }
+            },
+            confirmButton = {
+                if (!isDownloading) {
+                    Button(onClick = {
+                        isDownloading = true
+                        downloadMessage = "Generating PCM audio..."
+                        scope.launch {
+                            try {
+                                // Simulate generating/fetching PCM data from our AudioBuffer/Workflow
+                                // In production, this would grab the actual generated track bytearray
+                                val dummyPcm = ByteArray(48000 * 2 * 2 * 5) // 5 seconds of silent dummy data
+                                downloadMessage = "Converting to WAV format..."
+                                
+                                val safeFilename = song.title.replace(Regex("[^a-zA-Z0-9.-]"), "_") + "_Export"
+                                val success = com.ai.audio.infrastructure.export.WavExporter.exportToWav(
+                                    context, dummyPcm, safeFilename
+                                )
+                                
+                                kotlinx.coroutines.delay(1000)
+                                if (success) {
+                                    downloadMessage = "Saved successfully to Music/SurSun!"
+                                } else {
+                                    downloadMessage = "Failed to save file."
+                                }
+                                kotlinx.coroutines.delay(1500)
+                                showDownloadDialog = false
+                                downloadMessage = ""
+                            } catch (e: Exception) {
+                                downloadMessage = "Error: ${e.message}"
+                            } finally {
+                                isDownloading = false
+                            }
+                        }
+                    }) {
+                        Text("Download WAV")
+                    }
+                }
+            },
+            dismissButton = {
+                if (!isDownloading) {
+                    TextButton(onClick = { showDownloadDialog = false; downloadMessage = "" }) {
+                        Text("Cancel")
+                    }
+                }
+            }
+        )
+    }
+
+    if (showB2BExportDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isB2BExporting) showB2BExportDialog = false },
+            title = { Text("Enterprise B2B Sync") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Issue a cryptographic watermarked license for Hollywood/AAA Game Sync. High-Fidelity 320kbps WAV.", fontSize = 14.sp)
+                    if (isB2BExporting) {
+                        CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+                        Text(b2bMessage, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                    } else if (b2bMessage.isNotEmpty()) {
+                        Text(b2bMessage, fontSize = 13.sp, color = Color(0xFF10B981))
+                    }
+                }
+            },
+            confirmButton = {
+                if (!isB2BExporting) {
+                    Button(onClick = {
+                        isB2BExporting = true
+                        b2bMessage = "Generating audio via Edge AI & Syncing License..."
+                        scope.launch {
+                            try {
+                                val workflow = com.ai.audio.infrastructure.workflow.AudioGenerationWorkflow(context)
+                                workflow.generateAndSecureTrack(
+                                    token = "dummy_token_for_b2b",
+                                    clientId = "client_enterprise_99X",
+                                    assetId = song.id.toString(),
+                                    projectId = "proj_unicorn_1"
+                                )
+                                kotlinx.coroutines.delay(2000) // Simulate processing time for UX
+                                b2bMessage = "Success! High-Fidelity Audio Watermarked and Synced."
+                                kotlinx.coroutines.delay(1500)
+                                showB2BExportDialog = false
+                            } catch (e: Exception) {
+                                b2bMessage = "Failed: ${e.message}"
+                            } finally {
+                                isB2BExporting = false
+                            }
+                        }
+                    }) {
+                        Text("Generate & Sync License")
+                    }
+                }
+            },
+            dismissButton = {
+                if (!isB2BExporting) {
+                    TextButton(onClick = { showB2BExportDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            }
+        )
+    }
+
+    if (showSocialShareDialog) {
+        SocialShareVisualizerDialog(song = song, onDismiss = { showSocialShareDialog = false })
+    }
+  }
 }

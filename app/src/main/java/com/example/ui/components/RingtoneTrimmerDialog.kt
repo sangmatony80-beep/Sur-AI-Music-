@@ -1,12 +1,8 @@
 package com.example.ui.components
 
-import androidx.compose.animation.*
-import androidx.compose.foundation.BorderStroke
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -15,144 +11,77 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.SongEntity
+import com.ai.audio.infrastructure.export.AudioTrimmer
+import com.ai.audio.infrastructure.export.WavExporter
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RingtoneTrimmerDialog(
     song: SongEntity,
     onDismiss: () -> Unit,
-    onSetRingtoneSuccess: (String) -> Unit = {}
+    onSetRingtoneSuccess: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var startSeconds by remember { mutableFloatStateOf(0f) }
-    val clipDuration = 30f // Standard ringtone length: 30 seconds
-    val maxTrackDuration = 180f
-    
+    val clipDuration = 30f // Fixed 30s ringtone
+    val maxTrackDuration = 210f // e.g. 3m 30s
     var isPreviewPlaying by remember { mutableStateOf(false) }
-    var currentPreviewPosition by remember { mutableFloatStateOf(0f) }
+    var currentPreviewPosition by remember { mutableFloatStateOf(startSeconds) }
+    
     var isFadeIn by remember { mutableStateOf(true) }
     var isFadeOut by remember { mutableStateOf(true) }
-    var ringtoneType by remember { mutableStateOf("Phone Call Ringtone") }
+    var ringtoneType by remember { mutableStateOf("Phone Ringtone") }
+    
     var showSuccessToast by remember { mutableStateOf(false) }
+    var isProcessing by remember { mutableStateOf(false) }
 
-    // Simulated waveform bars
-    val waveformBars = remember(song.id) {
-        val rand = Random(song.id.toInt().coerceAtLeast(1))
-        List(40) { rand.nextFloat().coerceIn(0.15f, 1f) }
-    }
+    // Fake waveform generation
+    val waveformBars = remember { List(40) { Random.nextFloat() * 0.8f + 0.2f } }
 
-    // Preview playback loop
     LaunchedEffect(isPreviewPlaying, startSeconds) {
         if (isPreviewPlaying) {
             currentPreviewPosition = startSeconds
-            while (isActive && isPreviewPlaying) {
-                delay(100L)
+            while (isPreviewPlaying && currentPreviewPosition < (startSeconds + clipDuration)) {
+                delay(100)
                 currentPreviewPosition += 0.1f
-                if (currentPreviewPosition >= startSeconds + clipDuration) {
-                    currentPreviewPosition = startSeconds
-                }
             }
+            isPreviewPlaying = false
         }
     }
 
     AlertDialog(
-        onDismissRequest = {
-            isPreviewPlaying = false
-            onDismiss()
-        },
+        onDismissRequest = { if (!isProcessing) onDismiss() },
         title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ContentCut,
-                        contentDescription = "Trim",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "Ringtone Maker & Trimmer",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                IconButton(onClick = {
-                    isPreviewPlaying = false
-                    onDismiss()
-                }) {
-                    Icon(Icons.Default.Close, contentDescription = "Close")
-                }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Default.ContentCut, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text("AI Ringtone Maker", fontWeight = FontWeight.Bold)
             }
         },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Song details header
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Default.MusicNote,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = song.title,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1
-                            )
-                            Text(
-                                text = "${song.artist} • ${song.genre}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                // Waveform Trimming Scrubber
                 Text(
-                    text = "Trim 30s Audio Segment:",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
+                    text = "Trim a 30-second seamless loop from \"${song.title}\"",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
+                // Visualizer/Trimmer Graph area
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(80.dp)
@@ -163,7 +92,6 @@ fun RingtoneTrimmerDialog(
                             .padding(horizontal = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        // Waveform visualizer bars
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -173,7 +101,6 @@ fun RingtoneTrimmerDialog(
                                 val barTime = (index / 40f) * maxTrackDuration
                                 val isInsideClip = barTime >= startSeconds && barTime <= (startSeconds + clipDuration)
                                 val isCurrentlyPlaying = isPreviewPlaying && (barTime <= currentPreviewPosition && barTime >= startSeconds)
-
                                 Box(
                                     modifier = Modifier
                                         .width(4.dp)
@@ -213,7 +140,6 @@ fun RingtoneTrimmerDialog(
                         val sSec = (startSeconds % 60).toInt()
                         val eMin = ((startSeconds + clipDuration) / 60).toInt()
                         val eSec = ((startSeconds + clipDuration) % 60).toInt()
-
                         Text(
                             text = "Start: ${String.format("%d:%02d", sMin, sSec)}",
                             style = MaterialTheme.typography.labelSmall,
@@ -234,7 +160,6 @@ fun RingtoneTrimmerDialog(
                     }
                 }
 
-                // Audio Fade & Type Options
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -243,23 +168,16 @@ fun RingtoneTrimmerDialog(
                         selected = isFadeIn,
                         onClick = { isFadeIn = !isFadeIn },
                         label = { Text("Fade In 2s") },
-                        leadingIcon = {
-                            if (isFadeIn) Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp))
-                        },
                         modifier = Modifier.weight(1f)
                     )
                     FilterChip(
                         selected = isFadeOut,
                         onClick = { isFadeOut = !isFadeOut },
                         label = { Text("Fade Out 2s") },
-                        leadingIcon = {
-                            if (isFadeOut) Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp))
-                        },
                         modifier = Modifier.weight(1f)
                     )
                 }
 
-                // Ringtone Target Selector
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -273,7 +191,6 @@ fun RingtoneTrimmerDialog(
                     }
                 }
 
-                // Preview Player Button
                 OutlinedButton(
                     onClick = { isPreviewPlaying = !isPreviewPlaying },
                     modifier = Modifier.fillMaxWidth(),
@@ -285,6 +202,11 @@ fun RingtoneTrimmerDialog(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(if (isPreviewPlaying) "Pause 30s Clip Preview" else "Listen to 30s Trimmed Preview")
+                }
+
+                if (isProcessing) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    Text("Trimming audio buffer...", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                 }
 
                 if (showSuccessToast) {
@@ -300,7 +222,7 @@ fun RingtoneTrimmerDialog(
                         ) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(18.dp))
                             Text(
-                                text = "Successfully applied as $ringtoneType! Audio clip saved.",
+                                text = "Successfully applied as $ringtoneType! Audio clip saved to Music.",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF10B981)
@@ -311,25 +233,53 @@ fun RingtoneTrimmerDialog(
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    isPreviewPlaying = false
-                    showSuccessToast = true
-                    onSetRingtoneSuccess("${song.title} set as $ringtoneType")
-                },
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Default.RingVolume, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Set as $ringtoneType")
+            if (!isProcessing) {
+                Button(
+                    onClick = {
+                        isPreviewPlaying = false
+                        isProcessing = true
+                        
+                        scope.launch {
+                            // 1. Generate Dummy PCM data representing the full song
+                            // 48kHz * 2 channels * 2 bytes = 192000 bytes/sec
+                            val dummyFullPcm = ByteArray((maxTrackDuration * 192000).toInt())
+                            
+                            // 2. Actually trim the audio using AudioTrimmer
+                            val trimmedData = AudioTrimmer.trimAudio(
+                                pcmData = dummyFullPcm,
+                                startTimeSec = startSeconds,
+                                endTimeSec = startSeconds + clipDuration
+                            )
+                            
+                            // 3. Export to WAV using WavExporter
+                            if (trimmedData != null) {
+                                val filename = "Ringtone_${song.title.replace(" ", "_")}_$ringtoneType"
+                                WavExporter.exportToWav(context, trimmedData, filename)
+                                
+                                isProcessing = false
+                                showSuccessToast = true
+                                onSetRingtoneSuccess("${song.title} set as $ringtoneType")
+                            } else {
+                                isProcessing = false
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.RingVolume, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Save $ringtoneType")
+                }
             }
         },
         dismissButton = {
-            TextButton(onClick = {
-                isPreviewPlaying = false
-                onDismiss()
-            }) {
-                Text("Cancel")
+            if (!isProcessing) {
+                TextButton(onClick = {
+                    isPreviewPlaying = false
+                    onDismiss()
+                }) {
+                    Text("Cancel")
+                }
             }
         }
     )

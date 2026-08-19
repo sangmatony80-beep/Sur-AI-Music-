@@ -73,6 +73,8 @@ fun LeftDrawerContent(
         add(DrawerMenuItem("automation", "অটোমেশন ও সোশ্যাল (৬)", "Automation & Social Bot (6)", Icons.Default.AutoMode, "AI_STUDIO", "AUTO"))
         add(DrawerMenuItem("voice_access", "ভয়েস ও অ্যাক্সেসিবিলিটি (৬)", "Voice & Accessibility (6)", Icons.Default.Mic, "AI_STUDIO", "VOICE"))
         add(DrawerMenuItem("pro_power", "প্রো পাওয়ার ফিচারসমূহ (৮)", "Studio Pro Suite (8)", Icons.Default.WorkspacePremium, "AI_STUDIO", "PRO"))
+        add(DrawerMenuItem("enterprise_hub", "এন্টারপ্রাইজ ইউনিকর্ন হাব (৳১২০+ কোটি)", "Enterprise Unicorn Hub (৳120Cr+)", Icons.Default.Verified, "AI_STUDIO", "UNICORN"))
+        add(DrawerMenuItem("unicorn_roadmap", "ইউনিকর্ন স্টার্টআপ রোডম্যাপ ($1B+)", "Unicorn Roadmap ($1B+)", Icons.Default.RocketLaunch, "AI_STUDIO", "ROADMAP"))
 
         // Market & Profile
         add(DrawerMenuItem("marketplace", "এআই মার্কেটপ্লেস", "AI Marketplace", Icons.Default.Storefront, "MARKET"))

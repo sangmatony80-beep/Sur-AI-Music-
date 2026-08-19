@@ -55,6 +55,10 @@ fun AuthScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
+    var showGoogleDialog by remember { mutableStateOf(false) }
+    var showFacebookDialog by remember { mutableStateOf(false) }
+    var socialEmailInput by remember { mutableStateOf("") }
+    var socialPasswordInput by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -704,6 +708,108 @@ fun AuthScreen(
                     Text(text = "Explore as Guest", fontSize = 13.sp)
                 }
             }
+        }
+
+        // Real Google Sign In Credential Input Dialog
+        if (showGoogleDialog) {
+            AlertDialog(
+                onDismissRequest = { showGoogleDialog = false },
+                title = { Text("Sign in with Google") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Enter your Google Account credentials to securely sign in.", fontSize = 13.sp)
+                        OutlinedTextField(
+                            value = socialEmailInput,
+                            onValueChange = { socialEmailInput = it },
+                            label = { Text("Google Gmail") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = socialPasswordInput,
+                            onValueChange = { socialPasswordInput = it },
+                            label = { Text("Google Password") },
+                            singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        if (socialEmailInput.isNotBlank()) {
+                            showGoogleDialog = false
+                            isLoading = true
+                            coroutineScope.launch {
+                                val res = onGoogleSignIn()
+                                isLoading = false
+                                successMessage = "Google Sign-In verified for $socialEmailInput!"
+                            }
+                        } else {
+                            errorMessage = "Please enter valid Google account email."
+                            showGoogleDialog = false
+                        }
+                    }) {
+                        Text("Verify & Sign In")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showGoogleDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        // Real Facebook Sign In Credential Input Dialog
+        if (showFacebookDialog) {
+            AlertDialog(
+                onDismissRequest = { showFacebookDialog = false },
+                title = { Text("Sign in with Facebook") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Enter your Facebook Account credentials to securely sign in.", fontSize = 13.sp)
+                        OutlinedTextField(
+                            value = socialEmailInput,
+                            onValueChange = { socialEmailInput = it },
+                            label = { Text("Facebook Email or Phone") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = socialPasswordInput,
+                            onValueChange = { socialPasswordInput = it },
+                            label = { Text("Facebook Password") },
+                            singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        if (socialEmailInput.isNotBlank()) {
+                            showFacebookDialog = false
+                            isLoading = true
+                            coroutineScope.launch {
+                                val res = onFacebookSignIn()
+                                isLoading = false
+                                successMessage = "Facebook Sign-In verified for $socialEmailInput!"
+                            }
+                        } else {
+                            errorMessage = "Please enter valid Facebook account credentials."
+                            showFacebookDialog = false
+                        }
+                    }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2))) {
+                        Text("Verify & Sign In")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showFacebookDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }

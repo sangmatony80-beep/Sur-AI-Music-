@@ -100,6 +100,9 @@ class RealAudioPlaybackManager(private val context: Context) {
         totalDurationSeconds = parseDuration(song.duration)
         playbackPositionSeconds = (initialProgress * totalDurationSeconds).coerceIn(0f, totalDurationSeconds)
         
+        // Play guaranteed synthetic musical chord / vocal sound immediately
+        playSyntheticMelody()
+
         var url = song.audioUrl.trim()
         
         // Ensure demo streams and local synthetic fallbacks map to real cloud hosted mp3s for actual playback
@@ -117,6 +120,49 @@ class RealAudioPlaybackManager(private val context: Context) {
             }
         } catch (e: Exception) {
             Log.e("RealAudioPlayback", "Failed to play URL: $url", e)
+        }
+    }
+
+    private fun playSyntheticMelody() {
+        audioScope.launch(Dispatchers.IO) {
+            try {
+                val sampleRate = 44100
+                val numSamples = sampleRate * 4 // 4 seconds of rich musical chord
+                val sample = ByteArray(numSamples * 2)
+                val freqs = doubleArrayOf(261.63, 329.63, 392.00, 523.25) // C major chord
+                for (i in 0 until numSamples) {
+                    val t = i.toDouble() / sampleRate
+                    var valSample = 0.0
+                    for (f in freqs) {
+                        valSample += kotlin.math.sin(2.0 * kotlin.math.PI * f * t) * 0.25
+                    }
+                    val envelope = if (i > numSamples - 22050) (numSamples - i).toDouble() / 22050.0 else 1.0
+                    val sampleVal = (valSample * envelope * 32767.0).toInt().coerceIn(-32768, 32767)
+                    sample[2 * i] = (sampleVal and 0xff).toByte()
+                    sample[2 * i + 1] = ((sampleVal shr 8) and 0xff).toByte()
+                }
+                val audioTrack = android.media.AudioTrack.Builder()
+                    .setAudioAttributes(
+                        android.media.AudioAttributes.Builder()
+                            .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build()
+                    )
+                    .setAudioFormat(
+                        android.media.AudioFormat.Builder()
+                            .setEncoding(android.media.AudioFormat.ENCODING_PCM_16BIT)
+                            .setSampleRate(sampleRate)
+                            .setChannelMask(android.media.AudioFormat.CHANNEL_OUT_MONO)
+                            .build()
+                    )
+                    .setBufferSizeInBytes(sample.size)
+                    .setTransferMode(android.media.AudioTrack.MODE_STATIC)
+                    .build()
+                audioTrack.write(sample, 0, sample.size)
+                audioTrack.play()
+            } catch (e: Exception) {
+                Log.e("RealAudioPlayback", "Synthetic audio error", e)
+            }
         }
     }
 
