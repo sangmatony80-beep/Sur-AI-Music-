@@ -90,15 +90,19 @@ fun AiVocalTunerDialog(
         }
     }
 
-    // Timer for voice recording simulation
+    val recorder = remember { com.example.data.audio.RealVoiceRecorder(context) }
+    var recordedFile by remember { mutableStateOf<java.io.File?>(null) }
+
     LaunchedEffect(isRecording) {
         if (isRecording) {
             recordingDuration = 0
+            recordedFile = recorder.startRecording("VocalTuner")
             while (isRecording && recordingDuration < 15) {
                 delay(1000)
                 recordingDuration++
             }
             if (recordingDuration >= 15) {
+                recorder.stopRecording()
                 isRecording = false
                 hasRecordedAudio = true
                 Toast.makeText(context, "১৫ সেকেন্ড রেকর্ড সম্পন্ন হয়েছে!", Toast.LENGTH_SHORT).show()
@@ -426,13 +430,14 @@ fun AiVocalTunerDialog(
                                             } else {
                                                 isPlayingTuned = false
                                                 isPlayingOriginal = true
+                                                val audioPath = recordedFile?.absolutePath ?: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
                                                 audioPlaybackManager.play(
                                                     SongEntity(
                                                         id = 991,
                                                         title = "Original Voice",
                                                         artist = "User Voice",
                                                         genre = "Raw",
-                                                        audioUrl = "http://raw.demo",
+                                                        audioUrl = audioPath,
                                                         duration = "0:15",
                                                         imageUrl = "",
                                                         lyrics = "[Raw Voice Recording]"
@@ -461,13 +466,17 @@ fun AiVocalTunerDialog(
                                             } else {
                                                 isPlayingOriginal = false
                                                 isPlayingTuned = true
+                                                com.example.data.audio.AiVocalSingingEngine.getInstance(context).previewAiVoice(
+                                                    voiceName = "Aria",
+                                                    customSampleText = "সুর টিউন করে নিখুঁত সুরেলা করা হয়েছে।"
+                                                )
                                                 audioPlaybackManager.play(
                                                     SongEntity(
                                                         id = 992,
                                                         title = "Auto-Tuned Melodious Voice",
                                                         artist = "Sur AI Beautifier",
                                                         genre = "Baul • Folk",
-                                                        audioUrl = "http://tuned.demo",
+                                                        audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
                                                         duration = "0:15",
                                                         imageUrl = "",
                                                         lyrics = "[Auto-Tuned Melodious Vocal]"

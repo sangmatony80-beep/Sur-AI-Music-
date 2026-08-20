@@ -35,6 +35,23 @@ fun PricingScreen(
     var isYearly by remember { mutableStateOf(false) }
     var showComparisonTable by remember { mutableStateOf(false) }
 
+    var showPaymentDialogForPlan by remember { mutableStateOf<PlanEntity?>(null) }
+
+    if (showPaymentDialogForPlan != null) {
+        val plan = showPaymentDialogForPlan!!
+        val price = if (isYearly) plan.priceYearly else plan.priceMonthly
+        com.example.ui.components.InstantMfsPaymentDialog(
+            packName = "${plan.name} (${if (isYearly) "Yearly" else "Monthly"})",
+            tokenAmount = plan.tokensPerMonth,
+            priceBdt = price,
+            onDismiss = { showPaymentDialogForPlan = null },
+            onPaymentSuccess = { _, _, _ ->
+                onSubscribe(plan.id, if (isYearly) "yearly" else "monthly")
+                showPaymentDialogForPlan = null
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -187,7 +204,11 @@ fun PricingScreen(
 
                         Button(
                             onClick = {
-                                onSubscribe(plan.id, if (isYearly) "yearly" else "monthly")
+                                if (price > 0) {
+                                    showPaymentDialogForPlan = plan
+                                } else {
+                                    onSubscribe(plan.id, if (isYearly) "yearly" else "monthly")
+                                }
                             },
                             enabled = !isCurrent,
                             modifier = Modifier.fillMaxWidth(),

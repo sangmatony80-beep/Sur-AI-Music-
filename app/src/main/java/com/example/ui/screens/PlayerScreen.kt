@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -104,8 +106,8 @@ fun PlayerScreen(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.82f)
-                .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)),
+                .fillMaxHeight(0.68f)
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
             color = MaterialTheme.colorScheme.background
         ) {
             Box(
@@ -114,7 +116,7 @@ fun PlayerScreen(
                     .background(
                         Brush.verticalGradient(
                             listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                                 Color(0xFF0F172A),
                                 MaterialTheme.colorScheme.background
                             )
@@ -125,9 +127,9 @@ fun PlayerScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Top Bar
                 Row(
@@ -135,67 +137,72 @@ fun PlayerScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onClose) {
+                    IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) {
                         Icon(imageVector = Icons.Default.KeyboardArrowDown, contentDescription = "Close", tint = MaterialTheme.colorScheme.onBackground)
                     }
                     Text(
                         text = "Now Playing",
                         fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Row {
-                        IconButton(onClick = { showSocialShareDialog = true }) {
+                        IconButton(onClick = { showSocialShareDialog = true }, modifier = Modifier.size(34.dp)) {
                             Icon(
                                 imageVector = Icons.Default.Share,
                                 contentDescription = "Share Track",
-                                tint = Color(0xFFEC4899)
+                                tint = Color(0xFFEC4899),
+                                modifier = Modifier.size(20.dp)
                             )
                         }
-                        IconButton(onClick = { showRingtoneDialog = true }) {
+                        IconButton(onClick = { showRingtoneDialog = true }, modifier = Modifier.size(34.dp)) {
                             Icon(
                                 imageVector = Icons.Default.ContentCut,
                                 contentDescription = "Ringtone Maker",
-                                tint = Color(0xFFF59E0B)
+                                tint = Color(0xFFF59E0B),
+                                modifier = Modifier.size(20.dp)
                             )
                         }
-                        IconButton(onClick = { showStemDialog = true }) {
+                        IconButton(onClick = { showStemDialog = true }, modifier = Modifier.size(34.dp)) {
                             Icon(
                                 imageVector = Icons.Default.GraphicEq,
                                 contentDescription = "Stems Mixer",
-                                tint = Color(0xFF38BDF8)
+                                tint = Color(0xFF38BDF8),
+                                modifier = Modifier.size(20.dp)
                             )
                         }
-                        IconButton(onClick = { showDownloadDialog = true }) {
+                        IconButton(onClick = { showDownloadDialog = true }, modifier = Modifier.size(34.dp)) {
                             Icon(
                                 imageVector = Icons.Default.Download,
                                 contentDescription = "Download Song",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
-                        IconButton(onClick = { showB2BExportDialog = true }) {
+                        IconButton(onClick = { showB2BExportDialog = true }, modifier = Modifier.size(34.dp)) {
                             Icon(
                                 imageVector = Icons.Default.BusinessCenter,
                                 contentDescription = "Enterprise B2B Sync License",
-                                tint = Color(0xFF10B981) // Emerald Green
+                                tint = Color(0xFF10B981),
+                                modifier = Modifier.size(20.dp)
                             )
                         }
-                        IconButton(onClick = onFavoriteClick) {
+                        IconButton(onClick = onFavoriteClick, modifier = Modifier.size(34.dp)) {
                             Icon(
                                 imageVector = if (song.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Favorite",
-                                tint = if (song.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+                                tint = if (song.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
-
                 // Artwork with AI Cover Generator Badge
                 Box(
                     modifier = Modifier
-                        .size(240.dp)
-                        .clip(RoundedCornerShape(28.dp)),
+                        .size(150.dp)
+                        .clip(RoundedCornerShape(20.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
@@ -210,43 +217,41 @@ fun PlayerScreen(
                         onClick = { showCoverArtDialog = true },
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .padding(10.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color.Black.copy(alpha = 0.65f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                            .padding(6.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.Black.copy(alpha = 0.7f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color(0xFFFACC15), modifier = Modifier.size(12.dp))
-                            Text("AI Art", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color(0xFFFACC15), modifier = Modifier.size(10.dp))
+                            Text("AI Art", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Song Info & Lyrics Preview
+                // Song Info
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = song.title,
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "${song.artist} • ${song.genre}",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
+                }
                     Spacer(modifier = Modifier.height(10.dp))
                     Surface(
                         onClick = { showSyncedLyricsModal = true },
@@ -289,7 +294,6 @@ fun PlayerScreen(
                             )
                         }
                     }
-                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -353,69 +357,90 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Studio Mode Toggle Header: Simple Player vs Pro Studio
-                Row(
+                // Scroll-Down / Expandable Studio Tools Toggle Banner
+                var isStudioExpanded by remember { mutableStateOf(false) }
+                val chevronRotation by androidx.compose.animation.core.animateFloatAsState(
+                    targetValue = if (isStudioExpanded) 180f else 0f,
+                    label = "chevronRotation"
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (isStudioExpanded) Color(0xFF1E1B4B) else Color(0xFF1E293B).copy(alpha = 0.8f),
+                    border = BorderStroke(
+                        1.dp,
+                        if (isStudioExpanded) Color(0xFF8B5CF6).copy(alpha = 0.6f) else Color(0xFF334155)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFF1E293B).copy(alpha = 0.7f))
-                        .padding(3.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable { isStudioExpanded = !isStudioExpanded }
                 ) {
-                    // Simple Mode Toggle Button
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (studioMode == "SIMPLE") MaterialTheme.colorScheme.primary else Color.Transparent,
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .clickable { studioMode = "SIMPLE" }
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
-                            modifier = Modifier.padding(vertical = 6.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                Icons.Default.MusicNote,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = if (studioMode == "SIMPLE") Color.Black else Color.LightGray
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                "বেসিক মোড (Clean)",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (studioMode == "SIMPLE") Color.Black else Color.LightGray
-                            )
-                        }
-                    }
+                            Surface(
+                                shape = CircleShape,
+                                color = if (isStudioExpanded) Color(0xFF8B5CF6) else Color(0xFF334155),
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.GraphicEq,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
 
-                    // Pro Studio Mode Toggle Button
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (studioMode == "PRO") Color(0xFF8B5CF6) else Color.Transparent,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { studioMode = "PRO" }
-                    ) {
+                            Column {
+                                Text(
+                                    text = if (isStudioExpanded) "🔼 স্টুডিও টুলস লুকান" else "🔽 স্ক্রল ডাউন স্টুডিও টুলস",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = if (isStudioExpanded) "কারাওকে, DAW, EQ, বিটপ্যাড ও রিয়াজ সক্রিয়" else "ট্যাপ করে ১০+ প্রো অডিও টুলস খুলুন",
+                                    fontSize = 10.sp,
+                                    color = if (isStudioExpanded) Color(0xFFA78BFA) else Color.LightGray
+                                )
+                            }
+                        }
+
                         Row(
-                            modifier = Modifier.padding(vertical = 6.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isStudioExpanded) Color(0xFF6366F1) else Color(0xFF0F172A)
+                            ) {
+                                Text(
+                                    text = if (isStudioExpanded) "PRO STUDIO" else "১০+ TOOLS",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isStudioExpanded) Color.White else Color(0xFF38BDF8),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                )
+                            }
+
                             Icon(
-                                Icons.Default.GraphicEq,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = if (studioMode == "PRO") Color.White else Color.LightGray
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                "প্রো স্টুডিও (Pro Tools)",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (studioMode == "PRO") Color.White else Color.LightGray
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = "Toggle Studio",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .rotate(chevronRotation)
                             )
                         }
                     }
@@ -489,9 +514,9 @@ fun PlayerScreen(
                     }
                 }
 
-                // Pro Studio Suite Toggled Content
+                // Pro Studio Suite Toggled Content (Animated scroll down drawer)
                 androidx.compose.animation.AnimatedVisibility(
-                    visible = studioMode == "PRO",
+                    visible = isStudioExpanded || studioMode == "PRO",
                     enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
                     exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
                 ) {

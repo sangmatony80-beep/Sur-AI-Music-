@@ -48,6 +48,21 @@ fun MarketplaceScreen(
 ) {
     val context = LocalContext.current
     var selectedTab by remember { mutableStateOf(0) }
+    var checkoutItem by remember { mutableStateOf<Pair<String, Int>?>(null) } // Name to BDT Price
+
+    if (checkoutItem != null) {
+        val (name, priceBdt) = checkoutItem!!
+        com.example.ui.components.InstantMfsPaymentDialog(
+            packName = name,
+            tokenAmount = 50,
+            priceBdt = priceBdt,
+            onDismiss = { checkoutItem = null },
+            onPaymentSuccess = { _, _, trxId ->
+                checkoutItem = null
+                Toast.makeText(context, "✅ সফলভাবে ক্রয় সম্পন্ন হয়েছে! TrxID: $trxId", Toast.LENGTH_LONG).show()
+            }
+        )
+    }
 
     val categories = listOf(
         "🎹 Beat & Lyrics Store",
@@ -113,7 +128,7 @@ fun MarketplaceScreen(
         // Tab Content Area
         Box(modifier = Modifier.weight(1f)) {
             when (selectedTab) {
-                0 -> BeatAndLyricsStoreTab(beats, lyrics)
+                0 -> BeatAndLyricsStoreTab(beats, lyrics, onBuyItem = { name, bdt -> checkoutItem = Pair(name, bdt) })
                 1 -> NftAndCommercialLicenseTab(nftState, commercialLicense)
                 2 -> CoursesAndWhiteLabelTab(courses, whiteLabel)
                 3 -> DeveloperApiAndSpotifyTab(apiDashboard, spotifyDist)
@@ -128,7 +143,8 @@ fun MarketplaceScreen(
 @Composable
 private fun BeatAndLyricsStoreTab(
     beats: List<MarketplaceBeatItem>,
-    lyrics: List<MarketplaceLyricsItem>
+    lyrics: List<MarketplaceLyricsItem>,
+    onBuyItem: (name: String, priceBdt: Int) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -180,13 +196,19 @@ private fun BeatAndLyricsStoreTab(
 
                             Column(horizontalAlignment = Alignment.End) {
                                 Button(
-                                    onClick = { Toast.makeText(context, "Lease purchased for \$${beat.leasePriceUSD}!", Toast.LENGTH_SHORT).show() },
+                                    onClick = { 
+                                        val bdt = (beat.leasePriceUSD * 120).toInt()
+                                        onBuyItem("Beat Lease: ${beat.title}", bdt)
+                                    },
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
                                     Text("Lease \$${beat.leasePriceUSD}", fontSize = 11.sp)
                                 }
                                 OutlinedButton(
-                                    onClick = { Toast.makeText(context, "Exclusive License offer sent: \$${beat.exclusivePriceUSD}", Toast.LENGTH_SHORT).show() },
+                                    onClick = { 
+                                        val bdt = (beat.exclusivePriceUSD * 120).toInt()
+                                        onBuyItem("Exclusive Rights: ${beat.title}", bdt)
+                                    },
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
                                     Text("Exclusive \$${beat.exclusivePriceUSD}", fontSize = 10.sp)
@@ -212,7 +234,10 @@ private fun BeatAndLyricsStoreTab(
                         supportingContent = { Text("By ${l.authorName} • Language: ${l.language} • Rights: ${l.rightsType}") },
                         trailingContent = {
                             Button(
-                                onClick = { Toast.makeText(context, "Lyrics Buyout Successful: \$${l.priceUSD}", Toast.LENGTH_SHORT).show() }
+                                onClick = { 
+                                    val bdt = (l.priceUSD * 120).toInt()
+                                    onBuyItem("Lyrics Buyout: ${l.title}", bdt)
+                                }
                             ) {
                                 Text("\$${l.priceUSD}", fontSize = 12.sp)
                             }

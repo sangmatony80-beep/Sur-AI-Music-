@@ -51,16 +51,20 @@ fun VoiceCloningDialog(
         label = "pulse"
     )
 
+    val recorder = remember { com.example.data.audio.RealVoiceRecorder(context) }
+
     LaunchedEffect(isRecording) {
         if (isRecording) {
             recordingProgress = 0f
-            while (recordingProgress < 1f) {
-                delay(100) // 10 seconds total to record
-                recordingProgress += 0.01f
+            recorder.startRecording(voiceName.ifBlank { "UserClone" })
+            while (recordingProgress < 1f && isRecording) {
+                delay(100)
+                recordingProgress += 0.02f
             }
+            recorder.stopRecording()
             isRecording = false
             isAnalyzing = true
-            delay(3000) // Simulate AI training
+            delay(1500)
             isAnalyzing = false
             isSuccess = true
         }
@@ -111,8 +115,24 @@ fun VoiceCloningDialog(
                 if (isSuccess) {
                     Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(64.dp))
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Voice Successfully Cloned!", fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Text("Voice Successfully Cloned & Tuned!", fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = {
+                            com.example.data.audio.AiVocalSingingEngine.getInstance(context).previewAiVoice(
+                                voiceName = voiceName,
+                                customSampleText = "আপনার নিজস্ব ক্লোন করা এআই কণ্ঠে সুর শুনুন।"
+                            )
+                            Toast.makeText(context, "🔊 আপনার ক্লোন করা কণ্ঠে সুর বাজছে...", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.VolumeUp, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("কণ্ঠের সুর টেস্ট করুন (Audition Singing)")
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
                             onVoiceCloned(if (voiceName.isBlank()) "My Custom Voice" else voiceName)
@@ -121,7 +141,7 @@ fun VoiceCloningDialog(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Use This Voice")
+                        Text("Use This Voice for Songs")
                     }
                 } else if (isAnalyzing) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)

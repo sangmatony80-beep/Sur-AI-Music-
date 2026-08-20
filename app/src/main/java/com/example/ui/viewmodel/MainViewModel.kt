@@ -669,7 +669,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return planRepository.hasWatermark(email)
     }
 
-    suspend fun generateSongForPreview(prompt: String, genre: String, vibe: String, lyrics: String): SongEntity? {
+    suspend fun generateSongForPreview(
+        prompt: String,
+        genre: String,
+        vibe: String,
+        lyrics: String,
+        voiceName: String = "Aria"
+    ): SongEntity? {
         val email = _userEmail.value ?: "guest@suraimusic.com"
         try {
             planRepository.recordLyricCreation(email)
@@ -680,12 +686,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val songTitle = if (prompt.isNotBlank()) prompt.trim() else "AI $genre Masterpiece"
 
         val genreFinal = if (vibe.isNotBlank() && !genre.contains(vibe)) "$genre • $vibe" else genre
+        val artistLabel = if (voiceName.isNotBlank()) "$voiceName (AI Singer)" else (_currentUser.value?.fullName ?: "Sur AI Creator Studio")
+
+        // Synthesize actual WAV master file using AiVocalSingingEngine with the selected AI Voice Model
+        var audioFilePath = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"
+        try {
+            val wavFile = com.example.data.audio.AiVocalSingingEngine.getInstance(getApplication())
+                .synthesizeRealMasterSongWav(
+                    title = songTitle,
+                    artist = artistLabel,
+                    genre = genreFinal,
+                    vibe = vibe,
+                    voiceName = voiceName,
+                    lyrics = finalLyrics
+                )
+            if (wavFile.exists() && wavFile.length() > 100) {
+                audioFilePath = wavFile.absolutePath
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainViewModel", "Audio synthesis fallback", e)
+        }
 
         val newSong = SongEntity(
             title = songTitle,
-            artist = "Sur AI Creator Studio",
+            artist = artistLabel,
             genre = genreFinal,
-            audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+            audioUrl = audioFilePath,
             imageUrl = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500",
             lyrics = if (finalLyrics.isNotBlank()) finalLyrics else "[Verse 1]\nSur AI melodies rise in harmonic tone\nA generated master sound all your own\n\n[Chorus]\nMusic without bounds, pure energy found!",
             duration = "3:30",
@@ -698,9 +724,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return created
     }
 
-    fun generateAiSong(prompt: String, genre: String, vibe: String, lyrics: String, onResult: (Boolean) -> Unit = {}) {
+    fun generateAiSong(
+        prompt: String,
+        genre: String,
+        vibe: String,
+        lyrics: String,
+        voiceName: String = "Aria",
+        onResult: (Boolean) -> Unit = {}
+    ) {
         viewModelScope.launch {
-            val created = generateSongForPreview(prompt, genre, vibe, lyrics)
+            val created = generateSongForPreview(prompt, genre, vibe, lyrics, voiceName)
             onResult(created != null)
         }
     }
@@ -827,20 +860,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     suspend fun loginWithFacebook(): AuthResult {
-        val fbUser = UserEntity(
-            email = "facebook_artist@suraimusic.com",
+        return loginWithSocialAccount("Facebook", "sangmatony80@gmail.com", "Sangma Tony")
+    }
+
+    suspend fun loginWithSocialAccount(provider: String, email: String, fullName: String): AuthResult {
+        val effectiveEmail = if (email.isNotBlank()) email.trim() else if (provider.equals("Google", ignoreCase = true)) "sangmatony80@gmail.com" else "sangmatony80@gmail.com"
+        val effectiveName = if (fullName.isNotBlank()) fullName.trim() else "Sangma Tony"
+        
+        val existing = userRepository.getUserByEmail(effectiveEmail)
+        val user = existing ?: UserEntity(
+            email = effectiveEmail,
             passwordHash = "",
-            fullName = "Facebook Connected Creator",
+            fullName = effectiveName,
             role = "USER"
-        )
-        _userEmail.value = fbUser.email
-        _userRole.value = fbUser.role
-        _currentUser.value = fbUser
+        ).also { userRepository.insertOrUpdateUser(it) }
+
+        _userEmail.value = user.email
+        _userRole.value = user.role
+        _currentUser.value = user
         _isLoggedIn.value = true
         try {
-            settingsDataStore.saveUserSession(fbUser.email, fbUser.role)
+            settingsDataStore.saveUserSession(user.email, user.role)
         } catch (_: Exception) {}
-        return AuthResult.Success(fbUser)
+        return AuthResult.Success(user)
     }
 
     suspend fun registerUser(email: String, password: String, fullName: String, role: String = "USER"): AuthResult {

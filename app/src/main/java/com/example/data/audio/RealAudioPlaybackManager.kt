@@ -104,19 +104,39 @@ class RealAudioPlaybackManager(private val context: Context) {
         playSyntheticMelody()
 
         var url = song.audioUrl.trim()
+        val isLocalFile = url.startsWith("/") || url.startsWith("file://")
         
-        // Ensure demo streams and local synthetic fallbacks map to real cloud hosted mp3s for actual playback
-        if (url.isBlank() || url.contains("demo") || url.contains("raw.vocal") || url.contains("tuned.vocal") || url.contains("example")) {
+        // Ensure demo streams and local synthetic fallbacks map to real cloud hosted mp3s for actual playback if not a real local file
+        if (!isLocalFile && (url.isBlank() || url.contains("demo") || url.contains("raw.vocal") || url.contains("tuned.vocal") || url.contains("example"))) {
             url = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
         }
 
         try {
-            val mediaItem = MediaItem.fromUri(url)
+            val uri = if (isLocalFile) {
+                if (url.startsWith("file://")) android.net.Uri.parse(url)
+                else android.net.Uri.fromFile(java.io.File(url))
+            } else {
+                android.net.Uri.parse(url)
+            }
+            val mediaItem = MediaItem.fromUri(uri)
             exoPlayer?.apply {
                 setMediaItem(mediaItem)
                 prepare()
                 seekTo((playbackPositionSeconds * 1000L).toLong())
                 playWhenReady = true
+            }
+
+            // Sing lyrics in AI voice if song has lyrics
+            if (song.lyrics.isNotBlank() && song.isGenerated) {
+                val voiceModel = when {
+                    song.artist.isNotBlank() && !song.artist.contains("Creator Studio", ignoreCase = true) -> song.artist
+                    song.genre.isNotBlank() -> song.genre
+                    else -> "Aria"
+                }
+                AiVocalSingingEngine.getInstance(context).singSongLyricsLive(
+                    lyrics = song.lyrics,
+                    voiceName = voiceModel
+                )
             }
         } catch (e: Exception) {
             Log.e("RealAudioPlayback", "Failed to play URL: $url", e)
@@ -125,9 +145,10 @@ class RealAudioPlaybackManager(private val context: Context) {
 
     private fun playSyntheticMelody() {
         audioScope.launch(Dispatchers.IO) {
+            var audioTrack: android.media.AudioTrack? = null
             try {
                 val sampleRate = 44100
-                val numSamples = sampleRate * 4 // 4 seconds of rich musical chord
+                val numSamples = sampleRate * 2 // 2 seconds of clean chord
                 val sample = ByteArray(numSamples * 2)
                 val freqs = doubleArrayOf(261.63, 329.63, 392.00, 523.25) // C major chord
                 for (i in 0 until numSamples) {
@@ -136,12 +157,12 @@ class RealAudioPlaybackManager(private val context: Context) {
                     for (f in freqs) {
                         valSample += kotlin.math.sin(2.0 * kotlin.math.PI * f * t) * 0.25
                     }
-                    val envelope = if (i > numSamples - 22050) (numSamples - i).toDouble() / 22050.0 else 1.0
+                    val envelope = if (i > numSamples - 11025) (numSamples - i).toDouble() / 11025.0 else 1.0
                     val sampleVal = (valSample * envelope * 32767.0).toInt().coerceIn(-32768, 32767)
                     sample[2 * i] = (sampleVal and 0xff).toByte()
                     sample[2 * i + 1] = ((sampleVal shr 8) and 0xff).toByte()
                 }
-                val audioTrack = android.media.AudioTrack.Builder()
+                audioTrack = android.media.AudioTrack.Builder()
                     .setAudioAttributes(
                         android.media.AudioAttributes.Builder()
                             .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
@@ -160,8 +181,14 @@ class RealAudioPlaybackManager(private val context: Context) {
                     .build()
                 audioTrack.write(sample, 0, sample.size)
                 audioTrack.play()
+                delay(2200L)
+                audioTrack.stop()
+                audioTrack.release()
             } catch (e: Exception) {
                 Log.e("RealAudioPlayback", "Synthetic audio error", e)
+                try {
+                    audioTrack?.release()
+                } catch (_: Exception) {}
             }
         }
     }

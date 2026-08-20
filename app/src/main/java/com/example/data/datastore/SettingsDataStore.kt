@@ -44,7 +44,7 @@ class SettingsDataStore(private val context: Context) {
     }
 
     val themeMode: Flow<String> = context.dataStore.data
-        .map { preferences -> preferences[THEME_MODE_KEY] ?: "dark" }
+        .map { preferences -> preferences[THEME_MODE_KEY] ?: "light" }
 
     val themeColor: Flow<String> = context.dataStore.data
         .map { preferences -> preferences[THEME_COLOR_KEY] ?: "NeonPurple" }

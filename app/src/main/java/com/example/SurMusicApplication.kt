@@ -1,13 +1,12 @@
 package com.example
 
 import android.app.Application
-import android.os.Build
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
+import coil.imageLoader
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
-import coil.util.DebugLogger
 
 class SurMusicApplication : Application(), ImageLoaderFactory {
 
@@ -38,9 +37,19 @@ class SurMusicApplication : Application(), ImageLoaderFactory {
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
+        try {
+            imageLoader.memoryCache?.clear()
+        } catch (e: Exception) {
+            // Ignore trimming failure
+        }
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
+        try {
+            imageLoader.memoryCache?.clear()
+        } catch (e: Exception) {
+            // Ignore low memory clearing failure
+        }
     }
 }

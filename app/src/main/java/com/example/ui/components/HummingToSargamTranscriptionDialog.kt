@@ -58,18 +58,25 @@ fun HummingToSargamTranscriptionDialog(
         mutableStateOf("C4 - D4 - E4 - G4 | E4 - D4 - C4 | G4 - A4 - B4 - C5")
     }
 
-    // Recording timer simulation
+    val recorder = remember { com.example.data.audio.RealVoiceRecorder(context) }
+    var recordedFile by remember { mutableStateOf<java.io.File?>(null) }
+
+    // Real recording lifecycle
     LaunchedEffect(isRecording) {
         if (isRecording) {
             recordTimeSeconds = 0
+            recordedFile = recorder.startRecording("SargamHumming")
             while (isRecording && recordTimeSeconds < 15) {
                 delay(1000)
                 recordTimeSeconds++
             }
             if (isRecording) {
+                recorder.stopRecording()
                 isRecording = false
                 Toast.makeText(context, "হামিং রেকর্ড সম্পন্ন! স্বরলিপি প্রস্তুত।", Toast.LENGTH_SHORT).show()
             }
+        } else {
+            recorder.stopRecording()
         }
     }
 

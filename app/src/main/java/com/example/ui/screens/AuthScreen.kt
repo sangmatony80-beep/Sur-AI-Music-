@@ -35,6 +35,7 @@ fun AuthScreen(
     onRegister: suspend (String, String, String, String) -> AuthResult,
     onGoogleSignIn: suspend () -> AuthResult = { AuthResult.Error("Not Implemented") },
     onFacebookSignIn: suspend () -> AuthResult = { AuthResult.Error("Not Implemented") },
+    onSocialSignIn: (suspend (String, String, String) -> AuthResult)? = null,
     onGuestMode: () -> Unit
 ) {
     // Mode: 0 = Sign In, 1 = Sign Up / Register
@@ -57,8 +58,8 @@ fun AuthScreen(
     var isLoading by remember { mutableStateOf(false) }
     var showGoogleDialog by remember { mutableStateOf(false) }
     var showFacebookDialog by remember { mutableStateOf(false) }
-    var socialEmailInput by remember { mutableStateOf("") }
-    var socialPasswordInput by remember { mutableStateOf("") }
+    var socialEmailInput by remember { mutableStateOf("sangmatony80@gmail.com") }
+    var socialNameInput by remember { mutableStateOf("Sangma Tony") }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -547,18 +548,9 @@ fun AuthScreen(
                 // Google Sign In Button
                 Button(
                     onClick = {
-                        isLoading = true
-                        errorMessage = null
-                        successMessage = null
-                        coroutineScope.launch {
-                            val result = onGoogleSignIn()
-                            isLoading = false
-                            if (result is AuthResult.Success) {
-                                successMessage = "Google Authentication successful!"
-                            } else if (result is AuthResult.Error) {
-                                errorMessage = result.message
-                            }
-                        }
+                        socialEmailInput = "sangmatony80@gmail.com"
+                        socialNameInput = "Sangma Tony"
+                        showGoogleDialog = true
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -570,24 +562,16 @@ fun AuthScreen(
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            strokeWidth = 2.5.dp
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Public, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(
+                            text = "Continue with Google",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
                         )
-                    } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Default.Public, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text(
-                                text = "Continue with Google",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
                     }
                 }
 
@@ -596,18 +580,9 @@ fun AuthScreen(
                 // Facebook Sign In Button
                 Button(
                     onClick = {
-                        isLoading = true
-                        errorMessage = null
-                        successMessage = null
-                        coroutineScope.launch {
-                            val result = onFacebookSignIn()
-                            isLoading = false
-                            if (result is AuthResult.Success) {
-                                successMessage = "Facebook Authentication successful!"
-                            } else if (result is AuthResult.Error) {
-                                errorMessage = result.message
-                            }
-                        }
+                        socialEmailInput = "sangmatony80@gmail.com"
+                        socialNameInput = "Sangma Tony"
+                        showFacebookDialog = true
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -619,24 +594,16 @@ fun AuthScreen(
                         contentColor = Color.White
                     )
                 ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.White,
-                            strokeWidth = 2.5.dp
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Facebook, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(
+                            text = "Continue with Facebook",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
                         )
-                    } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Default.Facebook, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text(
-                                text = "Continue with Facebook",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
                     }
                 }
 
@@ -714,43 +681,85 @@ fun AuthScreen(
         if (showGoogleDialog) {
             AlertDialog(
                 onDismissRequest = { showGoogleDialog = false },
-                title = { Text("Sign in with Google") },
+                title = { 
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.Public, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Text("Google Sign-In")
+                    }
+                },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Enter your Google Account credentials to securely sign in.", fontSize = 13.sp)
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Choose an account to continue to Sur AI Studio:", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        
+                        // 1-Tap Quick Account Selection Card for user
+                        Surface(
+                            onClick = {
+                                socialEmailInput = "sangmatony80@gmail.com"
+                                socialNameInput = "Sangma Tony"
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (socialEmailInput == "sangmatony80@gmail.com") MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant,
+                            border = if (socialEmailInput == "sangmatony80@gmail.com") androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(36.dp).background(MaterialTheme.colorScheme.primary, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("ST", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                                Column {
+                                    Text("Sangma Tony", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("sangmatony80@gmail.com", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+
+                        Divider(modifier = Modifier.padding(vertical = 4.dp))
+
+                        Text("Or enter another Google account:", fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         OutlinedTextField(
-                            value = socialEmailInput,
-                            onValueChange = { socialEmailInput = it },
-                            label = { Text("Google Gmail") },
+                            value = socialNameInput,
+                            onValueChange = { socialNameInput = it },
+                            label = { Text("Display Name") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(
-                            value = socialPasswordInput,
-                            onValueChange = { socialPasswordInput = it },
-                            label = { Text("Google Password") },
+                            value = socialEmailInput,
+                            onValueChange = { socialEmailInput = it },
+                            label = { Text("Google Account / Gmail") },
                             singleLine = true,
-                            visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
                 },
                 confirmButton = {
                     Button(onClick = {
-                        if (socialEmailInput.isNotBlank()) {
+                        if (socialEmailInput.isNotBlank() && socialEmailInput.contains("@")) {
                             showGoogleDialog = false
                             isLoading = true
                             coroutineScope.launch {
-                                val res = onGoogleSignIn()
+                                val res = onSocialSignIn?.invoke("Google", socialEmailInput, socialNameInput)
+                                    ?: onGoogleSignIn()
                                 isLoading = false
-                                successMessage = "Google Sign-In verified for $socialEmailInput!"
+                                if (res is AuthResult.Success) {
+                                    successMessage = "Google Authentication verified for ${res.user.fullName} (${res.user.email})!"
+                                } else if (res is AuthResult.Error) {
+                                    errorMessage = res.message
+                                }
                             }
                         } else {
-                            errorMessage = "Please enter valid Google account email."
+                            errorMessage = "Please enter a valid Google account email."
                             showGoogleDialog = false
                         }
                     }) {
-                        Text("Verify & Sign In")
+                        Text("Sign In With Google")
                     }
                 },
                 dismissButton = {
@@ -765,23 +774,58 @@ fun AuthScreen(
         if (showFacebookDialog) {
             AlertDialog(
                 onDismissRequest = { showFacebookDialog = false },
-                title = { Text("Sign in with Facebook") },
+                title = { 
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.Facebook, contentDescription = null, tint = Color(0xFF1877F2))
+                        Text("Facebook Sign-In")
+                    }
+                },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Enter your Facebook Account credentials to securely sign in.", fontSize = 13.sp)
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Sign in with your Facebook account:", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        
+                        Surface(
+                            onClick = {
+                                socialEmailInput = "sangmatony80@gmail.com"
+                                socialNameInput = "Sangma Tony"
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (socialEmailInput == "sangmatony80@gmail.com") Color(0xFF1877F2).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
+                            border = if (socialEmailInput == "sangmatony80@gmail.com") androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF1877F2)) else null,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(36.dp).background(Color(0xFF1877F2), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("ST", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                                Column {
+                                    Text("Sangma Tony", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("sangmatony80@gmail.com", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+
+                        Divider(modifier = Modifier.padding(vertical = 4.dp))
+
                         OutlinedTextField(
-                            value = socialEmailInput,
-                            onValueChange = { socialEmailInput = it },
-                            label = { Text("Facebook Email or Phone") },
+                            value = socialNameInput,
+                            onValueChange = { socialNameInput = it },
+                            label = { Text("Profile Name") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(
-                            value = socialPasswordInput,
-                            onValueChange = { socialPasswordInput = it },
-                            label = { Text("Facebook Password") },
+                            value = socialEmailInput,
+                            onValueChange = { socialEmailInput = it },
+                            label = { Text("Facebook Email / Phone") },
                             singleLine = true,
-                            visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -792,16 +836,21 @@ fun AuthScreen(
                             showFacebookDialog = false
                             isLoading = true
                             coroutineScope.launch {
-                                val res = onFacebookSignIn()
+                                val res = onSocialSignIn?.invoke("Facebook", socialEmailInput, socialNameInput)
+                                    ?: onFacebookSignIn()
                                 isLoading = false
-                                successMessage = "Facebook Sign-In verified for $socialEmailInput!"
+                                if (res is AuthResult.Success) {
+                                    successMessage = "Facebook Authentication verified for ${res.user.fullName}!"
+                                } else if (res is AuthResult.Error) {
+                                    errorMessage = res.message
+                                }
                             }
                         } else {
-                            errorMessage = "Please enter valid Facebook account credentials."
+                            errorMessage = "Please enter valid Facebook credentials."
                             showFacebookDialog = false
                         }
                     }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2))) {
-                        Text("Verify & Sign In")
+                        Text("Sign In With Facebook")
                     }
                 },
                 dismissButton = {

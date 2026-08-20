@@ -27,12 +27,19 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.random.Random
 
+import androidx.compose.ui.platform.LocalContext
+import com.example.data.audio.RealVoiceRecorder
+
 @Composable
 fun MelodyHummingDialog(
     isBangla: Boolean = true,
     onDismiss: () -> Unit,
     onApplyPrompt: (melodyDescription: String, detectedGenre: String, suggestedTempo: String) -> Unit
 ) {
+    val context = LocalContext.current
+    val recorder = remember { RealVoiceRecorder(context) }
+    var recordedFile by remember { mutableStateOf<java.io.File?>(null) }
+
     var isRecording by remember { mutableStateOf(false) }
     var recordingSeconds by remember { mutableIntStateOf(0) }
     var isAnalyzing by remember { mutableStateOf(false) }
@@ -58,17 +65,21 @@ fun MelodyHummingDialog(
         label = "pulseScale"
     )
 
-    // Recording timer & animated bars loop
+    // Recording timer & real audio recorder loop
     LaunchedEffect(isRecording) {
         if (isRecording) {
             recordingSeconds = 0
+            recordedFile = recorder.startRecording("MelodyHumming")
             while (isActive && isRecording) {
                 delay(150L)
-                waveformLevels = List(24) { Random.nextFloat().coerceIn(0.15f, 1f) }
+                val ampRatio = (recorder.getMaxAmplitude() / 32767f).coerceIn(0.15f, 1f)
+                waveformLevels = List(24) { (ampRatio * (0.5f + Random.nextFloat() * 0.5f)).coerceIn(0.15f, 1f) }
                 if (System.currentTimeMillis() % 1000 < 200) {
                     recordingSeconds += 1
                 }
             }
+        } else {
+            recorder.stopRecording()
         }
     }
 

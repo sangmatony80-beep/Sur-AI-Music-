@@ -99,6 +99,10 @@ class UserRepository(private val userDao: UserDao) {
         return userDao.getUserByEmail(email.trim().lowercase())
     }
 
+    suspend fun insertOrUpdateUser(user: UserEntity) {
+        userDao.insertOrUpdateUser(user)
+    }
+
     suspend fun updateUserRole(email: String, newRole: String) {
         userDao.updateUserRole(email.trim().lowercase(), newRole)
     }
