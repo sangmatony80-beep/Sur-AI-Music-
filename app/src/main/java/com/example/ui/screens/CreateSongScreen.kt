@@ -53,6 +53,7 @@ import com.example.ui.components.RiyazTanpuraStudioDialog
 import com.example.ui.components.AudioMasteringEqVisualizerDialog
 import com.example.ui.components.BengaliLyricistNotepadDialog
 import com.example.ui.components.AdvancedAiPromptBuilderDialog
+import com.example.ui.components.SunoAi100VoicesStudioDialog
 import com.example.ui.components.SunoLyricsGeneratorDialog
 import com.example.ui.components.UltimateProStudioHubDialog
 import com.example.ui.components.MasterProExtensionsHubDialog
@@ -144,6 +145,7 @@ fun CreateSongScreen(
     var showMasteringEqDialog by rememberSaveable { mutableStateOf(false) }
     var showLyricistNotepadDialog by rememberSaveable { mutableStateOf(false) }
     var showAdvancedPromptBuilderDialog by rememberSaveable { mutableStateOf(false) }
+    var showSunoAi100VoicesDialog by rememberSaveable { mutableStateOf(false) }
     var showSunoLyricsDialog by rememberSaveable { mutableStateOf(false) }
     var showProStudioToolsDialog by rememberSaveable { mutableStateOf(false) }
     var showUltimateHubDialog by rememberSaveable { mutableStateOf(false) }
@@ -500,6 +502,43 @@ fun CreateSongScreen(
                                             Text("জেনার, মুড, BPM ও ইনস্ট্রুমেন্টেশন নিখুঁতভাবে সেট করুন ✨", fontSize = 11.sp, color = Color(0xFFA78BFA))
                                         }
                                         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF8B5CF6))
+                                    }
+                                }
+                            }
+
+                            item {
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { showSunoAi100VoicesDialog = true }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(38.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Mic,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        }
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("Suno.ai 100+ AI Voice Personas Studio", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                            Text("Select from 100+ Male, Female, Child, Rock & Jazz AI singer voices", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                                        }
+                                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                     }
                                 }
                             }
@@ -2748,6 +2787,19 @@ fun CreateSongScreen(
                     file.writeText("RIFF_WAV_MASTER_AUDIO_DATA_MOCK")
                     file
                 }
+            }
+        )
+    }
+
+    if (showSunoAi100VoicesDialog) {
+        SunoAi100VoicesStudioDialog(
+            onDismiss = { showSunoAi100VoicesDialog = false },
+            onGenerateWithVoice = { voiceName, lyrics, promptText, genre, mood ->
+                onGenerateSong(promptText, genre, mood, lyrics, voiceName)
+                android.widget.Toast.makeText(context, "✨ Generated AI Song with $voiceName!", android.widget.Toast.LENGTH_LONG).show()
+            },
+            onGenerateLyrics = { promptStr, lang, genre, vibe ->
+                onGenerateLyrics(promptStr, lang, genre, vibe)
             }
         )
     }

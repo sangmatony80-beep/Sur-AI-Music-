@@ -13,20 +13,20 @@ class PlanRepository(private val planDao: PlanDao) {
         val defaultPlans = listOf(
             PlanEntity(
                 id = "free",
-                name = "Free",
+                name = "Free Tier",
                 priceMonthly = 0,
                 priceYearly = 0,
-                lyricsLimitPerDay = 5,
+                lyricsLimitPerDay = 3,
                 lyricsLimitPerMonth = 0,
-                tokensPerMonth = 150,
+                tokensPerMonth = 100,
                 hasWatermark = true,
                 commercialLicense = false
             ),
             PlanEntity(
                 id = "starter",
-                name = "Starter",
-                priceMonthly = 99,
-                priceYearly = 990,
+                name = "Starter Pass",
+                priceMonthly = 199,
+                priceYearly = 1990,
                 lyricsLimitPerDay = 9999,
                 lyricsLimitPerMonth = 30,
                 tokensPerMonth = 500,
@@ -35,34 +35,34 @@ class PlanRepository(private val planDao: PlanDao) {
             ),
             PlanEntity(
                 id = "pro",
-                name = "Pro",
-                priceMonthly = 299,
-                priceYearly = 2990,
+                name = "Pro Creator",
+                priceMonthly = 499,
+                priceYearly = 4990,
                 lyricsLimitPerDay = 9999,
                 lyricsLimitPerMonth = 100,
                 tokensPerMonth = 2000,
-                hasWatermark = true,
-                commercialLicense = false
+                hasWatermark = false,
+                commercialLicense = true
             ),
             PlanEntity(
                 id = "ultra",
-                name = "Ultra",
-                priceMonthly = 699,
-                priceYearly = 6990,
+                name = "Ultra Studio",
+                priceMonthly = 1199,
+                priceYearly = 11990,
                 lyricsLimitPerDay = 9999,
-                lyricsLimitPerMonth = 300,
+                lyricsLimitPerMonth = 350,
                 tokensPerMonth = 6000,
-                hasWatermark = true,
-                commercialLicense = false
+                hasWatermark = false,
+                commercialLicense = true
             ),
             PlanEntity(
                 id = "studio",
-                name = "Studio",
-                priceMonthly = 1999,
-                priceYearly = 19990,
+                name = "Unicorn Enterprise",
+                priceMonthly = 3999,
+                priceYearly = 39990,
                 lyricsLimitPerDay = 9999,
                 lyricsLimitPerMonth = -1,
-                tokensPerMonth = 20000,
+                tokensPerMonth = 25000,
                 hasWatermark = false,
                 commercialLicense = true
             )

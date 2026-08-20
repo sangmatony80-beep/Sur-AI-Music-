@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.widget.Toast
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.local.UserEntity
 import com.example.data.repository.*
+import com.example.ui.components.OpenSourceMusicModelInstallerDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +63,13 @@ fun AdminPanelScreen(
     var isPinUnlocked by remember { mutableStateOf(false) }
     var enteredPin by remember { mutableStateOf("") }
     var pinError by remember { mutableStateOf(false) }
+    var showOpenSourceMusicModelDialog by remember { mutableStateOf(false) }
+
+    if (showOpenSourceMusicModelDialog) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { showOpenSourceMusicModelDialog = false }) {
+            OpenSourceMusicModelInstallerDialog(onDismiss = { showOpenSourceMusicModelDialog = false })
+        }
+    }
 
     // IF NOT ADMIN ROLE: SHOW STRICT ACCESS DENIED SECURITY SHIELD
     if (!isAdmin) {
@@ -343,7 +352,7 @@ fun AdminPanelScreen(
                 13 -> ModerationAndReportsAdminTab(moderationList, userReports)
                 14 -> FeatureTogglesAdminTab(featureToggles)
                 15 -> SystemAndPushFcmAdminTab(sysConfig)
-                16 -> SuperAdminStudioTab(onMassCreditInject, onClearCache)
+                16 -> SuperAdminStudioTab(onMassCreditInject, onClearCache, onOpenModelInstaller = { showOpenSourceMusicModelDialog = true })
                 17 -> AiGatewayRateLimitAdminTab()
                 18 -> GpuClusterAndStreamerAdminTab()
                 19 -> GlobalCdnEdgeCacheAdminTab()
@@ -924,7 +933,8 @@ private fun SystemAndPushFcmAdminTab(sysConfig: AdminSystemConfigData) {
 @Composable
 private fun SuperAdminStudioTab(
     onMassCreditInject: (Int, (Int) -> Unit) -> Unit,
-    onClearCache: (() -> Unit) -> Unit
+    onClearCache: (() -> Unit) -> Unit,
+    onOpenModelInstaller: () -> Unit
 ) {
     val context = LocalContext.current
     var tokenAmountText by remember { mutableStateOf("100") }
@@ -940,6 +950,31 @@ private fun SuperAdminStudioTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Open Source Music Model Installer Card
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+            border = BorderStroke(1.dp, Color(0xFF3B82F6))
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF38BDF8))
+                    Text("🎵 ওপেন সোর্স মিউজিক মডেল ইন্সটলার (Open Source Models)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                }
+                Text("Meta MusicGen, Stability Audio, Bark ও Kokoro ওপেন সোর্স মডেল ডাউনলোড এবং কনফিগার করুন।", fontSize = 12.sp, color = Color(0xFF94A3B8))
+
+                Button(
+                    onClick = onOpenModelInstaller,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Memory, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("মডেল ম্যানেজার ওপেন করুন", fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+        }
         // Mass Token Injector
         Card(
             shape = RoundedCornerShape(20.dp),

@@ -83,157 +83,90 @@ class AiVocalSingingEngine private constructor(private val context: Context) : T
     fun getVoiceConfig(voiceName: String): VoiceConfig {
         val lower = voiceName.lowercase()
         return when {
-            // Female Voices
-            lower.contains("aria") -> VoiceConfig(
-                pitch = 1.38f,
+            // Specific Female Voices
+            lower.contains("aria") || lower.contains("shreya") || lower.contains("maya") || 
+            lower.contains("luna") || lower.contains("ananya") || lower.contains("zara") ||
+            lower.contains("female") -> VoiceConfig(
+                pitch = 1.45f,
                 speechRate = 0.95f,
                 locale = Locale("bn", "BD"),
-                harmonicFreqs = doubleArrayOf(261.63, 329.63, 392.00, 523.25), // C Major
+                harmonicFreqs = doubleArrayOf(261.63, 329.63, 392.00, 523.25), // C Major Soprano
                 isFemale = true,
-                description = "আরিয়া — মিষ্টি সোপ্রানো পপ ও মেলোডিয়াস আধুনিক বাংলা",
-                banglaPreviewPhrase = "আমি আরিয়া, আপনার লেখা সুর ও লিরিক্স নিয়ে মিষ্টি সুরে গাইছি।"
-            )
-            lower.contains("shreya") -> VoiceConfig(
-                pitch = 1.42f,
-                speechRate = 0.88f,
-                locale = Locale("bn", "BD"),
-                harmonicFreqs = doubleArrayOf(261.63, 311.13, 392.00, 493.88), // C Minor Harmonic
-                isFemale = true,
-                description = "শ্রেয়া — ক্লাসিক্যাল, গজল ও রোমান্টিক মেলোডি",
-                banglaPreviewPhrase = "সুরের ছন্দে সুরের মায়ায় মন হারিয়ে যায়।"
-            )
-            lower.contains("maya") -> VoiceConfig(
-                pitch = 1.10f,
-                speechRate = 0.82f,
-                locale = Locale("bn", "BD"),
-                harmonicFreqs = doubleArrayOf(220.00, 261.63, 329.63, 440.00), // A Minor Lo-Fi
-                isFemale = true,
-                description = "মায়া — ইথিরিয়াল লো-ফাই ও ইমোশনাল অল্টো",
-                banglaPreviewPhrase = "রাতের নিস্তব্ধতায় আমার অল্টো সুরে একাকী গান বাজে।"
-            )
-            lower.contains("luna") -> VoiceConfig(
-                pitch = 1.48f,
-                speechRate = 1.12f,
-                locale = Locale.US,
-                harmonicFreqs = doubleArrayOf(293.66, 369.99, 440.00, 587.33), // D Major EDM
-                isFemale = true,
-                description = "লুনা — ব্রাইট পপ ডিভা ও ইলেকট্রনিক ড্যান্স ভোকাল",
-                banglaPreviewPhrase = "Feel the upbeat rhythm, singing high with vibrant energy!"
-            )
-            lower.contains("ananya") -> VoiceConfig(
-                pitch = 1.28f,
-                speechRate = 0.92f,
-                locale = Locale("bn", "BD"),
-                harmonicFreqs = doubleArrayOf(261.63, 329.63, 392.00, 466.16), // C7 Baul
-                isFemale = true,
-                description = "অনন্যা — খাঁটি পল্লীগীতি ও মাটির সুরের ফোক সোপ্রানো",
-                banglaPreviewPhrase = "মন মাঝি তোর বৈঠা নে রে, আমি আর বাইতে পারলাম না।"
-            )
-            lower.contains("zara") -> VoiceConfig(
-                pitch = 1.05f,
-                speechRate = 0.88f,
-                locale = Locale.US,
-                harmonicFreqs = doubleArrayOf(196.00, 246.94, 293.66, 369.99), // G Major 7
-                isFemale = true,
-                description = "জারা — সিল্কি ভেলভেট R&B ও লেট-নাইট জ্যাজ",
-                banglaPreviewPhrase = "Smooth late night R&B grooves singing your deepest feelings."
+                description = "প্রো ফিমেল সোপ্রানো ও মেলোডিয়াস ভোকালিস্ট",
+                banglaPreviewPhrase = "আমি এআই ফিমেল কণ্ঠ, আপনার সুরে মিষ্টি গান গাইছি।"
             )
 
-            // Male Voices
-            lower.contains("ruhan") || lower.contains("baul") -> VoiceConfig(
-                pitch = 0.88f,
+            // Specific Male Voices
+            lower.contains("ruhan") || lower.contains("dev") || lower.contains("nusrat") ||
+            lower.contains("kabir") || lower.contains("ayan") || lower.contains("tanvir") ||
+            lower.contains("mehedi") || lower.contains("zayn") || lower.contains("male") ||
+            lower.contains("baritone") || lower.contains("tenor") -> VoiceConfig(
+                pitch = 0.72f,
                 speechRate = 0.90f,
                 locale = Locale("bn", "BD"),
-                harmonicFreqs = doubleArrayOf(130.81, 196.00, 261.63, 329.63), // Rustic Ektara C
+                harmonicFreqs = doubleArrayOf(130.81, 164.81, 196.00, 261.63), // Deep Male Baritone
                 isFemale = false,
-                description = "রুহান বাউল — একতারা ও দোতারার মাটির টানের পুরুষ কণ্ঠ",
-                banglaPreviewPhrase = "মাটির টানে বাউলের গানে পরান জুড়াইয়া দে রে।"
-            )
-            lower.contains("dev") || lower.contains("baritone") -> VoiceConfig(
-                pitch = 0.72f,
-                speechRate = 0.88f,
-                locale = Locale("bn", "BD"),
-                harmonicFreqs = doubleArrayOf(110.00, 164.81, 220.00, 329.63), // Deep A Minor
-                isFemale = false,
-                description = "দেব — গভীর রোমান্টিক ব্যারিটোন মেলোডি",
-                banglaPreviewPhrase = "গভীর রাতের অচিন সুরে আমার এই ব্যারিটোন গান ভেসে আসে।"
-            )
-            lower.contains("nusrat") || lower.contains("sufi") -> VoiceConfig(
-                pitch = 1.05f,
-                speechRate = 0.92f,
-                locale = Locale("bn", "BD"),
-                harmonicFreqs = doubleArrayOf(261.63, 329.63, 392.00, 523.25),
-                isFemale = false,
-                description = "নুসরাত — সুফি কাওয়ালি ও উচ্চ-গ্রামের আধ্যাত্মিক টেনর",
-                banglaPreviewPhrase = "আলেয়ার আলোয় অন্তরে জ্বলে প্রেম ও ভক্তির সুফি সুর।"
-            )
-            lower.contains("kabir") || lower.contains("ghazal") -> VoiceConfig(
-                pitch = 0.82f,
-                speechRate = 0.85f,
-                locale = Locale("bn", "BD"),
-                harmonicFreqs = doubleArrayOf(146.83, 220.00, 293.66, 369.99),
-                isFemale = false,
-                description = "কবীর — গজল, কাওয়ালি ও ক্লাসিক্যাল নজরুলগীতি কণ্ঠ",
-                banglaPreviewPhrase = "নয়ন জলে ভাসিয়ে দিলেম আমার এই বিরহী গজল গান।"
-            )
-            lower.contains("ayan") || lower.contains("rap") || lower.contains("hiphop") -> VoiceConfig(
-                pitch = 0.85f,
-                speechRate = 1.30f,
-                locale = Locale("bn", "BD"),
-                harmonicFreqs = doubleArrayOf(65.41, 130.81, 196.00), // 808 Trap Sub
-                isFemale = false,
-                description = "আয়ান — দ্রুতগতির বাংলা ও ইংলিশ হিপ-হপ ও র‍্যাপ ফ্লো",
-                banglaPreviewPhrase = "মাইক্রোফোনে আগুন জ্বলে, বিটের তালে ছন্দের ঝড় তোলে এআই র‍্যাপ!"
-            )
-            lower.contains("tanvir") || lower.contains("rock") -> VoiceConfig(
-                pitch = 0.86f,
-                speechRate = 1.08f,
-                locale = Locale("bn", "BD"),
-                harmonicFreqs = doubleArrayOf(164.81, 246.94, 329.63, 493.88), // E Power Chord
-                isFemale = false,
-                description = "তানভীর — বাংলা রক ও পাওয়ারফুল হাই-এনার্জি ভয়েস",
-                banglaPreviewPhrase = "গিটারের তারে ঝংকার তুলে গর্জে ওঠে বাংলা রক সুর!"
-            )
-            lower.contains("mehedi") || lower.contains("acoustic") -> VoiceConfig(
-                pitch = 0.90f,
-                speechRate = 0.92f,
-                locale = Locale("bn", "BD"),
-                harmonicFreqs = doubleArrayOf(196.00, 246.94, 293.66, 392.00),
-                isFemale = false,
-                description = "মেহেদী — একাউস্টিক গিটার ও মেলোডিয়াস আনপ্লাগড",
-                banglaPreviewPhrase = "একাউস্টিক গিটারের সুরে সুর মিলিয়ে আমি গাইছি।"
-            )
-            lower.contains("zayn") -> VoiceConfig(
-                pitch = 0.95f,
-                speechRate = 1.00f,
-                locale = Locale.US,
-                harmonicFreqs = doubleArrayOf(261.63, 329.63, 392.00, 523.25),
-                isFemale = false,
-                description = "জাইন — মডার্ন পপ ও সোউলফুল ইংলিশ মেলোডি",
-                banglaPreviewPhrase = "Singing smooth modern pop vocals created exclusively for you."
+                description = "প্রো মেল ব্যারিটোন ও টেনর ভোকালিস্ট",
+                banglaPreviewPhrase = "আমি এআই পুরুষ কণ্ঠ, গভীর ব্যারিটোনে সুর তুলছি।"
             )
 
             // Kids Voices
-            lower.contains("robi") || lower.contains("tuli") || lower.contains("child") -> VoiceConfig(
-                pitch = 1.75f,
+            lower.contains("child") || lower.contains("kids") || lower.contains("robi") || lower.contains("tuli") -> VoiceConfig(
+                pitch = 1.85f,
                 speechRate = 1.05f,
                 locale = Locale("bn", "BD"),
                 harmonicFreqs = doubleArrayOf(329.63, 392.00, 523.25, 659.25),
                 isFemale = true,
-                description = "রবি — মিষ্টি ও স্নিগ্ধ শিশু কণ্ঠ (Child Vocalist)",
-                banglaPreviewPhrase = "মেঘের দেশে যাবো মোরা চাঁদের ভেলায় চড়ে মিষ্টি গান গেয়ে!"
+                description = "শিশু কণ্ঠ (Child Vocalist)",
+                banglaPreviewPhrase = "আমরা শিশু কণ্ঠের মিষ্টি সুরে গান গাইছি!"
             )
 
-            // Default
-            else -> VoiceConfig(
-                pitch = 1.25f,
-                speechRate = 0.98f,
+            // Rock Voices
+            lower.contains("rock") || lower.contains("star") || lower.contains("gritty") -> VoiceConfig(
+                pitch = 0.80f,
+                speechRate = 1.05f,
                 locale = Locale("bn", "BD"),
-                harmonicFreqs = doubleArrayOf(261.63, 329.63, 392.00, 523.25),
-                isFemale = true,
-                description = "সুর এআই স্টুডিও ভোকালিস্ট",
-                banglaPreviewPhrase = "সুর এআই স্টুডিওতে আপনার তৈরি লিরিক্সে গান বাজছে।"
+                harmonicFreqs = doubleArrayOf(164.81, 246.94, 329.63, 493.88),
+                isFemale = false,
+                description = "রক স্টার পাওয়ার ভয়েস",
+                banglaPreviewPhrase = "গিটারের তারে রকিং পাওয়ার ভোকাল!"
             )
+
+            // Jazz Voices
+            lower.contains("jazz") || lower.contains("blues") || lower.contains("velvet") -> VoiceConfig(
+                pitch = 1.25f,
+                speechRate = 0.90f,
+                locale = Locale.US,
+                harmonicFreqs = doubleArrayOf(196.00, 246.94, 293.66, 369.99),
+                isFemale = true,
+                description = "স্মোকি জ্যাজ ও ব্লুজ কণ্ঠ",
+                banglaPreviewPhrase = "Smooth late night jazz vocals."
+            )
+
+            // Folk & Baul
+            lower.contains("folk") || lower.contains("bard") || lower.contains("baul") -> VoiceConfig(
+                pitch = 0.88f,
+                speechRate = 0.88f,
+                locale = Locale("bn", "BD"),
+                harmonicFreqs = doubleArrayOf(130.81, 196.00, 261.63, 329.63),
+                isFemale = false,
+                description = "বাউল ও মাটির ফোক কণ্ঠ",
+                banglaPreviewPhrase = "মাটির টানে ফোক সুরে গান গাইছি।"
+            )
+
+            // Default fallback based on naming heuristic
+            else -> {
+                val isFem = !lower.contains("male") && !lower.contains("man") && !lower.contains("boy") && !lower.contains("rock")
+                VoiceConfig(
+                    pitch = if (isFem) 1.4f else 0.75f,
+                    speechRate = 0.95f,
+                    locale = Locale("bn", "BD"),
+                    harmonicFreqs = doubleArrayOf(261.63, 329.63, 392.00, 523.25),
+                    isFemale = isFem,
+                    description = "সুর এআই স্টুডিও প্রফেশনাল ভোকাল",
+                    banglaPreviewPhrase = "সুর এআই স্টুডিওতে আপনার তৈরি গান বাজছে।"
+                )
+            }
         }
     }
 
@@ -353,7 +286,7 @@ class AiVocalSingingEngine private constructor(private val context: Context) : T
     }
 
     /**
-     * Plays a rich multi-harmonic acoustic/electronic chord in real time using Android AudioTrack.
+     * Plays a rich multi-harmonic acoustic/electronic chord and synthesized AI singing vocal melody in real time using Android AudioTrack.
      */
     private fun playBackgroundChordTrack(freqs: DoubleArray, durationSeconds: Int = 4) {
         try {
@@ -367,16 +300,25 @@ class AiVocalSingingEngine private constructor(private val context: Context) : T
 
             for (i in 0 until numSamples) {
                 val t = i.toDouble() / SAMPLE_RATE
-                var sum = 0.0
+                var chordSum = 0.0
                 for (f in freqs) {
-                    // Fundamental + harmonics for rich instrument timbre (Guitar/Tanpura warm resonance)
                     val fundamental = sin(2.0 * PI * f * t)
                     val harmonic2 = 0.4 * sin(2.0 * PI * (f * 2) * t)
                     val harmonic3 = 0.2 * sin(2.0 * PI * (f * 3) * t)
-                    sum += (fundamental + harmonic2 + harmonic3) / freqs.size
+                    chordSum += (fundamental + harmonic2 + harmonic3) / freqs.size
                 }
 
-                // Envelope: Smooth Attack and Gentle Decay
+                // Add Synthesized Singing Voice Formant & Vibrato Melody
+                val noteIndex = ((i / (SAMPLE_RATE / 2)) % freqs.size)
+                val singingFreq = freqs[noteIndex] * 1.5 // Vocal melody octave
+                val vibrato = 1.0 + 0.025 * sin(2.0 * PI * 6.0 * t) // 6Hz vibrato
+                val voiceFundamental = sin(2.0 * PI * singingFreq * vibrato * t)
+                val formant1 = sin(2.0 * PI * 800.0 * t) * 0.35 // "Ah" vowel formant
+                val formant2 = sin(2.0 * PI * 1200.0 * t) * 0.2
+                val singingVocal = (voiceFundamental + formant1 + formant2) * 0.45
+
+                val mixed = (chordSum * 0.55 + singingVocal * 0.45)
+
                 val attackSamples = (SAMPLE_RATE * 0.1).toInt()
                 val releaseSamples = (SAMPLE_RATE * 0.8).toInt()
                 val env = when {
@@ -385,7 +327,7 @@ class AiVocalSingingEngine private constructor(private val context: Context) : T
                     else -> 1.0
                 }
 
-                val sampleVal = (sum * env * 24000.0).toInt().coerceIn(-32768, 32767)
+                val sampleVal = (mixed * env * 26000.0).toInt().coerceIn(-32768, 32767)
                 sample[2 * i] = (sampleVal and 0xff).toByte()
                 sample[2 * i + 1] = ((sampleVal shr 8) and 0xff).toByte()
             }
@@ -421,13 +363,13 @@ class AiVocalSingingEngine private constructor(private val context: Context) : T
                 } catch (_: Exception) {}
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to play AudioTrack chord", e)
+            Log.e(TAG, "Failed to play AudioTrack chord with singing", e)
         }
     }
 
     /**
      * Synthesizes and renders a complete, real master WAV audio file on the device
-     * with high-fidelity backing track, beat grooves, and neural AI singing.
+     * with high-fidelity backing track, beat grooves, and neural AI singing vocals.
      */
     suspend fun synthesizeRealMasterSongWav(
         title: String,
@@ -452,7 +394,7 @@ class AiVocalSingingEngine private constructor(private val context: Context) : T
         val config = getVoiceConfig(voiceName)
         val freqs = config.harmonicFreqs
 
-        // Generate full studio master track: Chords + 808 Bass + Rhythm Arpeggios
+        // Generate full studio master track: Chords + 808 Bass + Rhythm Arpeggios + AI Singing Vocals
         val bpm = when {
             genre.contains("EDM", ignoreCase = true) || genre.contains("Dance", ignoreCase = true) -> 128
             genre.contains("Rock", ignoreCase = true) -> 135
@@ -478,20 +420,29 @@ class AiVocalSingingEngine private constructor(private val context: Context) : T
             // Hi-hat / Shaker texture
             val hihatPulse = if (beatPhase in 0.45..0.55) (Math.random() - 0.5) * 0.15 else 0.0
 
-            // Lead Synth / Dotara Arpeggio
+            // Lead Synth / Arpeggio
             val arpeggioNoteIndex = ((i / (beatIntervalSamples / 2)) % freqs.size)
             val arpeggioFreq = freqs[arpeggioNoteIndex] * 2.0
             val arpeggioTone = sin(2.0 * PI * arpeggioFreq * t) * 0.15
 
-            val totalSample = (chordSum + kickPulse + hihatPulse + arpeggioTone).coerceIn(-1.0, 1.0)
+            // AI Singing Vocal Melody & Formants
+            val vocalNoteIndex = ((i / (SAMPLE_RATE * 2)) % freqs.size)
+            val vocalFreq = freqs[vocalNoteIndex] * 1.5
+            val vibrato = 1.0 + 0.02 * sin(2.0 * PI * 6.0 * t)
+            val vocalFund = sin(2.0 * PI * vocalFreq * vibrato * t)
+            val f1 = sin(2.0 * PI * 800.0 * t) * 0.3
+            val f2 = sin(2.0 * PI * 1200.0 * t) * 0.15
+            val aiSingingVocal = (vocalFund + f1 + f2) * 0.4
+
+            val totalSample = (chordSum * 0.45 + kickPulse + hihatPulse + arpeggioTone * 0.2 + aiSingingVocal * 0.35).coerceIn(-1.0, 1.0)
             val sample16 = (totalSample * 28000.0).toInt().coerceIn(-32768, 32767).toShort()
 
             // Left Channel
             pcmData[4 * i] = (sample16.toInt() and 0xff).toByte()
             pcmData[4 * i + 1] = ((sample16.toInt() shr 8) and 0xff).toByte()
 
-            // Right Channel (Subtle Stereo Spread)
-            val rightSample16 = ((totalSample * 0.95 + arpeggioTone * 0.1) * 28000.0).toInt().coerceIn(-32768, 32767).toShort()
+            // Right Channel (Subtle Stereo Spread with vocal shift)
+            val rightSample16 = ((totalSample * 0.93 + aiSingingVocal * 0.07) * 28000.0).toInt().coerceIn(-32768, 32767).toShort()
             pcmData[4 * i + 2] = (rightSample16.toInt() and 0xff).toByte()
             pcmData[4 * i + 3] = ((rightSample16.toInt() shr 8) and 0xff).toByte()
         }
@@ -499,7 +450,7 @@ class AiVocalSingingEngine private constructor(private val context: Context) : T
         // Write WAV Header and PCM Payload
         writeWavFile(outputFile, pcmData, SAMPLE_RATE, channels = 2)
 
-        Log.d(TAG, "Master WAV file rendered: ${outputFile.absolutePath} (${outputFile.length()} bytes)")
+        Log.d(TAG, "Master WAV file with AI Singing rendered: ${outputFile.absolutePath} (${outputFile.length()} bytes)")
         outputFile
     }
 
