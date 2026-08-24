@@ -52,7 +52,8 @@ fun LeftDrawerContent(
         add(DrawerMenuItem("downloads", "ডাউনলোড ও অফলাইন সেন্টার", "Downloads & Offline Center", Icons.Default.DownloadForOffline, "MAIN", "HOT"))
 
         // Studio Features - Each as a separate distinct screen
-        add(DrawerMenuItem("create_gen", "এআই গান জেনারেটর (Suno v4)", "AI Song Generator", Icons.Default.MusicNote, "AI_STUDIO", "HOT"))
+        add(DrawerMenuItem("sur_live_studio", "সুর এআই লাইভ ইঞ্জিন স্টুডিও", "Sur AI Live Studio Engine", Icons.Default.Language, "AI_STUDIO", "LIVE"))
+        add(DrawerMenuItem("create_gen", "এআই গান জেনারেটর স্টুডিও", "AI Song Generator Studio", Icons.Default.MusicNote, "AI_STUDIO", "HOT"))
         add(DrawerMenuItem("create_lyrics", "লিরিক্স স্টুডিও ও ট্রান্সক্রাইব", "Lyrics Studio & Transcribe", Icons.Default.EditNote, "AI_STUDIO"))
         add(DrawerMenuItem("create_adv", "এডভান্সড এআই ১০ ফিচার", "Advanced AI Tech (10)", Icons.Default.Psychology, "AI_STUDIO", "PRO"))
         add(DrawerMenuItem("create_stems", "প্রো স্টেম ও ডিজে টুলকিট", "Pro Stems & Mixer", Icons.Default.GraphicEq, "AI_STUDIO"))

@@ -345,12 +345,12 @@ class MusicStudioRepository(private val lyricsDao: LyricsDao) {
         username = "Sur AI Master Artist",
         handle = "@sur_artist_official",
         avatarUrl = "https://picsum.photos/seed/myprofile/200",
-        bio = "Making AI Music, Stems & Bangla Cyber Beats 🎵 Powered by Suno v4 & WebRTC Jam",
+        bio = "Making AI Music, Stems & Bangla Cyber Beats 🎵 Powered by Sur AI Neural Engine & WebRTC Jam",
         followersCount = 14200,
         followingCount = 380,
         totalPlaysCount = 485000,
         verifiedBadge = true,
-        topBadges = listOf("Verified Creator", "Suno Top 1%", "Stems Master", "Duet Champion"),
+        topBadges = listOf("Verified Creator", "Sur AI Top 1%", "Stems Master", "Duet Champion"),
         tracksPublished = 18
     )
 
@@ -390,7 +390,7 @@ class MusicStudioRepository(private val lyricsDao: LyricsDao) {
     )
 
     fun getUserPlaylists(): List<PlaylistData> = listOf(
-        PlaylistData("p1", "My Suno Hits 2026", "Top generated tracks with high plays", 12, true, "https://picsum.photos/seed/playlist1/300"),
+        PlaylistData("p1", "My Sur AI Hits 2026", "Top generated tracks with high plays", 12, true, "https://picsum.photos/seed/playlist1/300"),
         PlaylistData("p2", "Bangla Cyber Folk Stems", "Separated stems for live jam sessions", 8, true, "https://picsum.photos/seed/playlist2/300"),
         PlaylistData("p3", "Late Night Lofi Lounge", "Private study playlist", 15, false, "https://picsum.photos/seed/playlist3/300")
     )
@@ -453,7 +453,7 @@ class MusicStudioRepository(private val lyricsDao: LyricsDao) {
     )
 
     fun getMasterclassCourses(): List<MasterclassCourseItem> = listOf(
-        MasterclassCourseItem("c1", "Suno v4 Masterclass: Prompt to Hit Song", "Maestro Sol", 4.9f, 2480, 49.99f, "12 Modules • Certificate Included"),
+        MasterclassCourseItem("c1", "Sur AI Masterclass: Prompt to Hit Song", "Maestro Sol", 4.9f, 2480, 49.99f, "12 Modules • Certificate Included"),
         MasterclassCourseItem("c2", "AI Stem Separation & Mixing in Ableton Live", "DJ Akash", 5.0f, 1820, 59.99f, "8 Modules • Project Files"),
         MasterclassCourseItem("c3", "Bangla Cyber Folk Composition & Synthesis", "Anondo Das", 4.8f, 950, 39.99f, "6 Modules • Presets Included")
     )
@@ -649,7 +649,7 @@ class MusicStudioRepository(private val lyricsDao: LyricsDao) {
         monthlyBudgetUSD = 1000.00f,
         totalSpentUSD = 420.50f,
         recentExpenses = listOf(
-            ExpenseItem("Suno Pro Subscription", "Software / AI", 30.00f, "2026-08-01"),
+            ExpenseItem("Sur AI Pro Cloud Subscription", "Software / AI", 30.00f, "2026-08-01"),
             ExpenseItem("VST Synth Plugin License", "Gear & Software", 140.50f, "2026-08-03"),
             ExpenseItem("Facebook/IG Ad Campaign for Album", "Marketing", 250.00f, "2026-08-06")
         )
@@ -801,13 +801,13 @@ class MusicStudioRepository(private val lyricsDao: LyricsDao) {
     )
 
     fun getApiCostTrackerData(): ApiCostTrackerData = ApiCostTrackerData(
-        provider = "Google Gemini 2.5 & Suno AI Engine",
+        provider = "Sur AI Neural Audio Engine (Enterprise Tier)",
         totalApiRequests = 28450,
         totalCostUSD = 184.20f,
         modelBreakdownUSD = mapOf(
-            "Gemini 2.5 Flash (Lyrics & A&R)" to 24.50f,
-            "Gemini Pro 1.5 Audio Formants" to 68.20f,
-            "Suno AI V4 Music Render API" to 91.50f
+            "Sur AI Flash (Lyrics & A&R)" to 24.50f,
+            "Sur AI Pro Audio Formants" to 68.20f,
+            "Sur AI Neural Music Render API" to 91.50f
         )
     )
 

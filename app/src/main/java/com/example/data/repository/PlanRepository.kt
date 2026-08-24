@@ -119,6 +119,32 @@ class PlanRepository(private val planDao: PlanDao) {
         return planDao.getTokenBalanceSync(email) ?: 0
     }
 
+    suspend fun ensureWelcomeTokens(email: String) {
+        val existing = planDao.getTokenBalanceSync(email)
+        if (existing == null) {
+            addTokenTransaction(
+                email = email,
+                amount = 150,
+                type = "welcome_bonus",
+                description = "Initial Welcome Creation Tokens (150 Tokens)"
+            )
+        }
+    }
+
+    suspend fun consumeTokens(email: String, amount: Int, type: String, description: String): Boolean {
+        val currentBalance = getTokenBalanceSync(email)
+        if (currentBalance >= amount) {
+            addTokenTransaction(
+                email = email,
+                amount = -amount,
+                type = type,
+                description = description
+            )
+            return true
+        }
+        return false
+    }
+
     fun getTokenTransactions(email: String): Flow<List<TokenTransactionEntity>> {
         return planDao.getTokenTransactions(email)
     }

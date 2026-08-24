@@ -551,7 +551,7 @@ fun CommentsBottomSheet(
     val comments = remember {
         mutableStateListOf(
             "🔥 Incredible bass drop at 0:45!",
-            "Did you use Suno v4 for this? The vocal clarity is stunning.",
+            "Did you use Sur AI Neural Studio for this? The vocal clarity is stunning.",
             "Great AI composition, instantly added to my playlist! ❤️",
             "This sound feels like a cyberpunk soundtrack."
         )

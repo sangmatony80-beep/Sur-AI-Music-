@@ -36,6 +36,7 @@ fun AuthScreen(
     onGoogleSignIn: suspend () -> AuthResult = { AuthResult.Error("Not Implemented") },
     onFacebookSignIn: suspend () -> AuthResult = { AuthResult.Error("Not Implemented") },
     onSocialSignIn: (suspend (String, String, String) -> AuthResult)? = null,
+    onPhoneSignIn: (suspend (String, String) -> AuthResult)? = null,
     onGuestMode: () -> Unit
 ) {
     // Mode: 0 = Sign In, 1 = Sign Up / Register
@@ -58,6 +59,10 @@ fun AuthScreen(
     var isLoading by remember { mutableStateOf(false) }
     var showGoogleDialog by remember { mutableStateOf(false) }
     var showFacebookDialog by remember { mutableStateOf(false) }
+    var showPhoneDialog by remember { mutableStateOf(false) }
+    var phoneNumberInput by remember { mutableStateOf("+8801700000000") }
+    var otpCodeInput by remember { mutableStateOf("1234") }
+    var phoneStep by remember { mutableStateOf(0) }
     var socialEmailInput by remember { mutableStateOf("sangmatony80@gmail.com") }
     var socialNameInput by remember { mutableStateOf("Sangma Tony") }
 
@@ -607,6 +612,39 @@ fun AuthScreen(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Phone Number Sign In Button
+                Button(
+                    onClick = {
+                        phoneNumberInput = "+8801700000000"
+                        otpCodeInput = "1234"
+                        phoneStep = 0
+                        showPhoneDialog = true
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .testTag("phone_auth_button"),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF0F172A),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(
+                            text = "Continue with Phone Number & OTP",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Quick Demo Preset Accounts
@@ -855,6 +893,79 @@ fun AuthScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showFacebookDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        // Real Phone Number & OTP Verification Dialog
+        if (showPhoneDialog) {
+            AlertDialog(
+                onDismissRequest = { showPhoneDialog = false },
+                title = { 
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Text(if (phoneStep == 0) "Phone Number Sign-In" else "Enter Verification OTP")
+                    }
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (phoneStep == 0) {
+                            Text("Enter your mobile number to receive an instant verification OTP code:", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            OutlinedTextField(
+                                value = phoneNumberInput,
+                                onValueChange = { phoneNumberInput = it },
+                                label = { Text("Mobile Number (+880...)") },
+                                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            Text("Enter the 4-digit OTP sent to $phoneNumberInput (Demo OTP: 1234):", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            OutlinedTextField(
+                                value = otpCodeInput,
+                                onValueChange = { otpCodeInput = it },
+                                label = { Text("4-Digit OTP Code") },
+                                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        if (phoneStep == 0) {
+                            if (phoneNumberInput.length >= 10) {
+                                phoneStep = 1
+                            } else {
+                                errorMessage = "Please enter a valid phone number."
+                            }
+                        } else {
+                            if (otpCodeInput.length >= 4) {
+                                showPhoneDialog = false
+                                isLoading = true
+                                coroutineScope.launch {
+                                    val res = onPhoneSignIn?.invoke(phoneNumberInput, otpCodeInput)
+                                        ?: AuthResult.Error("Phone sign in not implemented")
+                                    isLoading = false
+                                    if (res is AuthResult.Success) {
+                                        successMessage = "Phone Number verified successfully for ${res.user.fullName}!"
+                                    } else if (res is AuthResult.Error) {
+                                        errorMessage = res.message
+                                    }
+                                }
+                            } else {
+                                errorMessage = "Please enter the valid 4-digit OTP code."
+                            }
+                        }
+                    }) {
+                        Text(if (phoneStep == 0) "Send OTP" else "Verify & Sign In")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showPhoneDialog = false }) {
                         Text("Cancel")
                     }
                 }

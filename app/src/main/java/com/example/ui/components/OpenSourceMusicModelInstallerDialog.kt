@@ -80,15 +80,15 @@ fun OpenSourceMusicModelInstallerDialog(
                 downloadProgress = 0f
             ),
             OpenSourceMusicModel(
-                id = "bark_suno",
-                name = "Bark Text-to-Audio (Suno AI)",
-                developer = "Suno AI",
-                version = "v0.9-transformer",
+                id = "sur_bark_neural",
+                name = "Sur Audio Neural Transformer (Bark Open Core)",
+                developer = "Sur AI Open Research",
+                version = "v1.2-transformer",
                 description = "ওপেন সোর্স মাল্টি-ল্যাঙ্গুয়েজ ভয়েস ও মিউজিক সিন্থেসিস মডেল। হাসিখুশি কণ্ঠ, কান্না ও বাদ্যযন্ত্রের নোট রেন্ডার করে।",
                 sizeMb = 560,
                 architecture = "GPT-style Generative Audio",
                 license = "MIT License",
-                downloadUrl = "https://github.com/suno-ai/bark",
+                downloadUrl = "https://huggingface.co/surai/audio-bark-open",
                 isDownloaded = true,
                 isEnabled = true,
                 downloadProgress = 1f
@@ -120,6 +120,76 @@ fun OpenSourceMusicModelInstallerDialog(
                 isDownloaded = false,
                 isEnabled = false,
                 downloadProgress = 0f
+            ),
+            OpenSourceMusicModel(
+                id = "audiogen_meta",
+                name = "AudioGen (Meta AI Sound Effects)",
+                developer = "Meta AI",
+                version = "v1.1",
+                description = "পরিবেশগত শব্দ, সাউন্ড ইফেক্ট, ও বাদ্যযন্ত্রের ধ্বনি তৈরি করার অডিও জেনারেটর মডেল।",
+                sizeMb = 210,
+                architecture = "Autoregressive Transformer",
+                license = "MIT License",
+                downloadUrl = "https://huggingface.co/facebook/audiogen-medium",
+                isDownloaded = false,
+                isEnabled = false,
+                downloadProgress = 0f
+            ),
+            OpenSourceMusicModel(
+                id = "jukebox_openai",
+                name = "Jukebox Open (OpenAI)",
+                developer = "OpenAI Research",
+                version = "v2.0",
+                description = "দীর্ঘ অডিও ট্র্যাক এবং প্রফেশনাল ভোকালসহ গান তৈরির হায়ারার্কিকাল ভিএই মডেল।",
+                sizeMb = 850,
+                architecture = "VQ-VAE + Prior Transformer",
+                license = "MIT License",
+                downloadUrl = "https://github.com/openai/jukebox",
+                isDownloaded = false,
+                isEnabled = false,
+                downloadProgress = 0f
+            ),
+            OpenSourceMusicModel(
+                id = "mubert_open",
+                name = "Mubert Open API Client",
+                developer = "Mubert Inc.",
+                version = "v3.0",
+                description = "এআই মিউজিক জেনারেশন এপিআই ক্লায়েন্ট যা রিয়েল-টাইম জেনারেশন এবং লুপ ট্র্যাক প্রদান করে।",
+                sizeMb = 45,
+                architecture = "Algorithmic Generative Client",
+                license = "Open Source SDK",
+                downloadUrl = "https://github.com/MubertAPI",
+                isDownloaded = true,
+                isEnabled = true,
+                downloadProgress = 1f
+            ),
+            OpenSourceMusicModel(
+                id = "ace_studio_vits",
+                name = "ACE Studio Neural Singing Model",
+                developer = "ACE Studio Open",
+                version = "v1.5",
+                description = "পেশাদার গায়কদের মতো পিচ কার্ভ এবং ভাইব্রাটো সহ নিখুঁত এআই সিংগিং ভয়েস রেন্ডার করে।",
+                sizeMb = 410,
+                architecture = "VITS Neural Vocoder",
+                license = "Open Community",
+                downloadUrl = "https://github.com/ace-studio-open",
+                isDownloaded = false,
+                isEnabled = false,
+                downloadProgress = 0f
+            ),
+            OpenSourceMusicModel(
+                id = "dac_descript",
+                name = "Descript Audio Codec (DAC)",
+                developer = "Descript",
+                version = "v4.0",
+                description = "অতি-উচ্চ মানের (44.1kHz) স্টুডিও অডিও কম্প্রেশন এবং হাই-ফিডেলিটি রিকনস্ট্রাকশন কোডেক।",
+                sizeMb = 95,
+                architecture = "Neural Audio Codec",
+                license = "MIT License",
+                downloadUrl = "https://github.com/descriptinc/descript-audio-codec",
+                isDownloaded = true,
+                isEnabled = true,
+                downloadProgress = 1f
             )
         )
     }
@@ -164,7 +234,7 @@ fun OpenSourceMusicModelInstallerDialog(
                             color = Color.White
                         )
                         Text(
-                            text = "Meta, Stability AI ও Suno-এর প্রিমিয়াম ওপেন সোর্স মডেল",
+                            text = "Meta, Stability AI ও Sur AI-এর প্রিমিয়াম ওপেন সোর্স মডেল",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF94A3B8)
                         )

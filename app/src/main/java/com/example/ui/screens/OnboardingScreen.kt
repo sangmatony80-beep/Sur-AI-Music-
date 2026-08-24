@@ -30,7 +30,7 @@ fun OnboardingScreen(onCompleted: () -> Unit) {
     val pages = listOf(
         OnboardingPage(
             "AI Song Generation",
-            "Generate professional tracks, vocals, and lyrics instantly using Suno v4 & OpenAI neural models.",
+            "Generate professional tracks, vocals, and lyrics instantly using Sur AI proprietary neural audio models.",
             Icons.Default.AutoAwesome
         ),
         OnboardingPage(

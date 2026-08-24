@@ -370,7 +370,7 @@ private fun CoursesAndWhiteLabelTab(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("🎓 AI Music Masterclasses & Courses", fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                Text("Learn Suno v4 prompt engineering, stem separation & mixing", fontSize = 12.sp)
+                Text("Learn Sur AI Studio prompt engineering, stem separation & mixing", fontSize = 12.sp)
 
                 Spacer(modifier = Modifier.height(12.dp))
 

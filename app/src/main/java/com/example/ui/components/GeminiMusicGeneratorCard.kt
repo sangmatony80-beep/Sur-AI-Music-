@@ -66,13 +66,13 @@ fun GeminiMusicGeneratorCard(
                 }
                 Column {
                     Text(
-                        text = "Gemini AI Music Generator",
+                        text = "Sur AI Studio Music Generator",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Describe your track & generate with Gemini API",
+                        text = "Describe your track & generate with Sur AI Neural Engine",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -128,12 +128,18 @@ fun GeminiMusicGeneratorCard(
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Generating Track via Gemini...", fontWeight = FontWeight.Bold)
+                    Text("Generating Track via Sur AI Engine...", fontWeight = FontWeight.Bold)
                 } else {
                     Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Generate Music", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 }
+            }
+
+            // Shimmer Loading Effect during AI Music Generation
+            if (isLoading) {
+                Spacer(modifier = Modifier.height(6.dp))
+                AiGenerationShimmerCard()
             }
 
             // Error Display
@@ -165,7 +171,7 @@ fun GeminiMusicGeneratorCard(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = "✨ Gemini AI Generated Track & Arrangement",
+                            text = "✨ Sur AI Neural Generated Track & Arrangement",
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.primary

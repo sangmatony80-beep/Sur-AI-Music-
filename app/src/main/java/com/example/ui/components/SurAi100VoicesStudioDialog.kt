@@ -37,7 +37,7 @@ data class AiSingerVoice(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SunoAi100VoicesStudioDialog(
+fun SurAi100VoicesStudioDialog(
     onDismiss: () -> Unit,
     onGenerateWithVoice: (voiceName: String, lyrics: String, prompt: String, genre: String, mood: String) -> Unit,
     onGenerateLyrics: suspend (prompt: String, lang: String, genre: String, vibe: String) -> String
@@ -51,12 +51,12 @@ fun SunoAi100VoicesStudioDialog(
     var lyricsInput by remember { mutableStateOf("") }
     var selectedGenre by remember { mutableStateOf("Pop") }
     var selectedMood by remember { mutableStateOf("Upbeat") }
-    var selectedLang by remember { mutableStateOf("English") }
+    var selectedLang by remember { mutableStateOf("Bangla") }
     var isGeneratingLyrics by remember { mutableStateOf(false) }
     var isGeneratingSong by remember { mutableStateOf(false) }
     var generationStatus by remember { mutableStateOf("") }
 
-    // 100 Comprehensive AI Singer Voices
+    // 100 Comprehensive Sur AI Singer Voices
     val voicesList = remember {
         val list = mutableListOf<AiSingerVoice>()
         val categories = listOf("Female", "Male", "Child", "Rock", "Jazz", "Folk", "Special")
@@ -65,14 +65,14 @@ fun SunoAi100VoicesStudioDialog(
         for (i in 1..25) {
             val names = listOf("Aria", "Maya", "Luna", "Shreya", "Ananya", "Zara", "Scarlett", "Kavya", "Stella", "Nisha", "Chloe", "Priya", "Elena", "Zoe", "Zara", "Mira", "Rhea", "Nabila", "Tanvi", "Sanjana", "Kiara", "Audrey", "Celeste", "Ruby", "Aurora")
             val name = "${names[(i - 1) % names.size]} (Female Pro $i)"
-            list.add(AiSingerVoice(i, name, "Female", "♀", "Soprano & Belting", "English / Bangla", "Warm melodic soprano with professional studio vocal resonance", "Pop Hit #$i"))
+            list.add(AiSingerVoice(i, name, "Female", "♀", "Soprano & Belting", "Bangla / Global", "Warm melodic soprano with professional studio vocal resonance", "Pop Hit #$i"))
         }
 
         // 26-50: Male Baritones & Tenors
         for (i in 26..50) {
             val names = listOf("Zayn", "Ruhan", "Dev", "Nusrat", "Kabir", "Ayan", "Tanvir", "Mehedi", "Arjun", "Farhan", "Julian", "Liam", "Mateo", "Kian", "Samir", "Arman", "Ronnie", "Vikram", "Kabir", "Zuber", "Tariq", "Imran", "Adnan", "Sohrab", "Orion")
             val name = "${names[(i - 26) % names.size]} (Male Pro ${i - 25})"
-            list.add(AiSingerVoice(i, name, "Male", "♂", "Tenor & Baritone", "Global & Multi-lingual", "Deep emotional baritone and powerful high tenor resonance", "Acoustic Ballad #$i"))
+            list.add(AiSingerVoice(i, name, "Male", "♂", "Tenor & Baritone", "Bangla & Global", "Deep emotional baritone and powerful high tenor resonance", "Acoustic Ballad #$i"))
         }
 
         // 51-65: Children & Kids
@@ -86,107 +86,125 @@ fun SunoAi100VoicesStudioDialog(
         for (i in 66..75) {
             val names = listOf("Stark", "Blaze", "Vortex", "Rage", "Cobra", "Titan", "Viper", "Thor", "Diesel", "Nexus")
             val name = "${names[(i - 66) % names.size]} (Rock Star ${i - 65})"
-            list.add(AiSingerVoice(i, name, "Rock", "🎸", "Gritty Rock Rasp", "English & Rock", "Stadium rock grit, raspy power vocals and aggressive distortion capability", "Heavy Anthem #$i"))
+            list.add(AiSingerVoice(i, name, "Rock", "🎸", "Gritty Rock Rasp", "Rock & Metal", "Stadium rock grit, raspy power vocals and aggressive distortion capability", "Heavy Anthem #$i"))
         }
 
         // 76-85: Jazz, Blues & R&B
         for (i in 76..85) {
             val names = listOf("Velvet", "Smokey", "Blue", "Hazel", "Django", "Miles", "Etta", "Nina", "Ray", "Bessie")
             val name = "${names[(i - 76) % names.size]} (Jazz Vocalist ${i - 75})"
-            list.add(AiSingerVoice(i, name, "Jazz", "🎷", "Smooth Contralto & Jazz", "English & Blues", "Smoky late-night jazz club vibrato and silky soul micro-tones", "Midnight Blues #$i"))
+            list.add(AiSingerVoice(i, name, "Jazz", "🎷", "Smooth Contralto & Jazz", "Jazz & Blues", "Smoky late-night jazz club vibrato and silky soul micro-tones", "Midnight Blues #$i"))
         }
 
         // 86-95: Folk, Baul & Traditional
         for (i in 86..95) {
-            val names = listOf("Lalon", "Hason", "Pagla", "Kuddus", "Radha", "Benu", "Gour", "Padma", "Meghna", "Tista")
-            val name = "${names[(i - 86) % names.size]} (Folk Bard ${i - 85})"
-            list.add(AiSingerVoice(i, name, "Folk", "🌾", "Earthy Folk Resonance", "Bengali Folk & Sufi", "Authentic rural acoustic soul, ektara undertones and meditative folk chants", "Baul Melody #$i"))
+            val names = listOf("Lalon AI", "Hason AI", "Shah Abdul AI", "Baul Samrat", "Folk Moni", "Palli Kantho", "Bhatiyali Sur", "Murshidi AI", "Jari Singer", "Sari Singer")
+            val name = "${names[(i - 86) % names.size]} (Folk Legend ${i - 85})"
+            list.add(AiSingerVoice(i, name, "Folk", "🪕", "Spiritual Baul & Folk", "Bangla Traditional", "Authentic mystical Baul ektara ornamentation and deep spiritual resonance", "Folk Song #$i"))
         }
 
-        // 96-100: Cyberpunk, Robotic & Choir
-        for (i in 96..100) {
-            val names = listOf("CyberX", "Vocodex", "Celestial Choir", "Matrix Alpha", "Synthetica")
-            val name = "${names[(i - 96) % names.size]} (AI Special ${i - 95})"
-            list.add(AiSingerVoice(i, name, "Special", "✨", "Neural Synth Voice", "Futuristic AI", "Multi-layered robotic vocoder, choir cathedral harmonics and AI synthesis", "Cyber EDM #$i"))
-        }
-
+        // 96-100: Special Neural & Celestial Models
+        val specials = listOf(
+            AiSingerVoice(96, "সুর এআই প্রাইম মাস্টার", "Special", "✨", "Dynamic Multi-Range", "Universal", "Adaptive neural vocal synthesis engineered by Sur AI Studio", "Hit #96"),
+            AiSingerVoice(97, "CyberHarmonizer X", "Special", "🤖", "Vocoder / Auto-Harmonizer", "Electronic", "Futuristic vocoder and layered AI chorus", "Electro #97"),
+            AiSingerVoice(98, "Celestial Choir", "Special", "👥", "Polychoral Ensemble", "Global Choral", "Ethereal 40-piece choir backing and epic cathedral acoustics", "Choral #98"),
+            AiSingerVoice(99, "Acoustic Whispers", "Special", "🍃", "ASMR Intimate Vocal", "Acoustic Pop", "Ultra-close microphone proximity with soothing breathy timbre", "Acoustic #99"),
+            AiSingerVoice(100, "Symphonic Diva", "Special", "👑", "Operatic Coloratura", "Classical Opera", "Dramatic 4-octave operatic belting with vibrato mastery", "Opera #100")
+        )
+        list.addAll(specials)
         list
     }
 
     val filteredVoices = voicesList.filter { voice ->
-        (selectedCategory == "All" || voice.category == selectedCategory) &&
-                (searchQuery.isBlank() || voice.name.contains(searchQuery, ignoreCase = true) || voice.style.contains(searchQuery, ignoreCase = true))
+        val matchesCategory = (selectedCategory == "All") || (voice.category == selectedCategory)
+        val matchesSearch = searchQuery.isBlank() ||
+                voice.name.contains(searchQuery, ignoreCase = true) ||
+                voice.style.contains(searchQuery, ignoreCase = true) ||
+                voice.language.contains(searchQuery, ignoreCase = true)
+        matchesCategory && matchesSearch
     }
+
+    val categories = listOf("All", "Female", "Male", "Child", "Folk", "Rock", "Jazz", "Special")
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = Modifier.fillMaxWidth().fillMaxHeight(0.95f),
-        shape = RoundedCornerShape(24.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Surface(color = MaterialTheme.colorScheme.primary, shape = CircleShape) {
-                        Icon(Icons.Default.Mic, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(8.dp).size(22.dp))
-                    }
-                    Column {
-                        Text("Suno.ai 100+ Voice Studio", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("Select from 100 Pro AI Singer Voices & Generate Songs", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = null)
-                }
+                Icon(
+                    imageVector = Icons.Default.RecordVoiceOver,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "সুর এআই ১০০+ ভয়েস মডেল স্টুডিও",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 520.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Search & Filter
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search 100 AI singer voices (e.g. Aria, Zayn, Robi, Rock)...", fontSize = 12.sp) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
-
-                // Category Chips
-                val categories = listOf("All", "Female", "Male", "Child", "Rock", "Jazz", "Folk", "Special")
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    items(categories) { cat ->
-                        val isSel = selectedCategory == cat
-                        FilterChip(
-                            selected = isSel,
-                            onClick = { selectedCategory = cat },
-                            label = { Text(cat, fontSize = 11.sp, fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal) }
-                        )
-                    }
-                }
-
-                HorizontalDivider()
-
-                // If voice not selected, show Voice Browser
                 if (selectedVoice == null) {
-                    Text("Select an AI Singer Voice (${filteredVoices.size} available):", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                    Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Voice Picker Screen
+                    Text(
+                        "সুর এআই নিউরাল প্রযুক্তিতে ১০০টি অনন্য এআই শিল্পীর কণ্ঠ থেকে আপনার পছন্দের ভয়েস নির্বাচন করুন:",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Search Box
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Search voice, style or language...", fontSize = 12.sp) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    // Categories Filter Chips
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(categories) { cat ->
+                            FilterChip(
+                                selected = selectedCategory == cat,
+                                onClick = { selectedCategory = cat },
+                                label = { Text(cat, fontSize = 11.sp) }
+                            )
+                        }
+                    }
+
+                    // 100 Voices List
+                    Box(modifier = Modifier.weight(1f)) {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
                             items(filteredVoices) { voice ->
                                 Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedVoice = voice },
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                                    modifier = Modifier.fillMaxWidth().clickable { selectedVoice = voice }
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                                    )
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                                        modifier = Modifier
+                                            .padding(10.dp)
+                                            .fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
@@ -243,59 +261,61 @@ fun SunoAi100VoicesStudioDialog(
                         }
                     }
 
-                    // Suno AI Lyric & Prompt Form
+                    // Sur AI Lyric & Prompt Form
                     Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             item {
-                                Text("1. Song Prompt / Idea (Sun.ai style):", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text("1. Song Prompt / Idea (Sur AI Studio):", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 OutlinedTextField(
                                     value = promptInput,
                                     onValueChange = { promptInput = it },
-                                    placeholder = { Text("e.g. An emotional acoustic song about rainy evening in Dhaka...", fontSize = 11.sp) },
+                                    placeholder = { Text("e.g. A soulful acoustic ballad about reunion in Dhaka rain...", fontSize = 11.sp) },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
+                                    shape = RoundedCornerShape(10.dp),
                                     maxLines = 2
                                 )
                             }
                             item {
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text("2. Lyrics (Auto-Generate or Custom):", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                                    Button(
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("2. Custom Lyrics:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    TextButton(
                                         onClick = {
                                             scope.launch {
                                                 isGeneratingLyrics = true
-                                                try {
-                                                    val generated = onGenerateLyrics(
-                                                        promptInput.ifBlank { "Emotional melody about love and rain" },
-                                                        selectedLang,
-                                                        selectedGenre,
-                                                        selectedMood
-                                                    )
-                                                    lyricsInput = generated
-                                                } catch (e: Exception) {
-                                                    lyricsInput = "[Verse 1]\nRaindrops falling on the glass\nMoments that will never pass\n\n[Chorus]\nSinging in this AI tune\nDancing underneath the moon"
-                                                }
+                                                val generated = onGenerateLyrics(
+                                                    promptInput.ifBlank { "Soulful Melodic Journey" },
+                                                    selectedLang,
+                                                    selectedGenre,
+                                                    selectedMood
+                                                )
+                                                lyricsInput = generated
                                                 isGeneratingLyrics = false
                                             }
                                         },
-                                        shape = RoundedCornerShape(8.dp),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                        enabled = !isGeneratingLyrics
                                     ) {
                                         if (isGeneratingLyrics) {
-                                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                                            Spacer(modifier = Modifier.width(6.dp))
+                                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                             Text("Generating...", fontSize = 10.sp)
+                                        } else {
+                                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Auto-Write Lyrics", fontSize = 10.sp)
                                         }
-                                        Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("AI Write Lyrics", fontSize = 11.sp)
                                     }
                                 }
                                 OutlinedTextField(
                                     value = lyricsInput,
                                     onValueChange = { lyricsInput = it },
-                                    placeholder = { Text("Enter lyrics or click AI Write Lyrics...", fontSize = 11.sp) },
-                                    modifier = Modifier.fillMaxWidth().height(120.dp),
-                                    shape = RoundedCornerShape(12.dp)
+                                    placeholder = { Text("[Verse 1]\nWrite or paste lyrics here...", fontSize = 11.sp) },
+                                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    maxLines = 6
                                 )
                             }
                             item {
@@ -342,7 +362,7 @@ fun SunoAi100VoicesStudioDialog(
                     onClick = {
                         scope.launch {
                             isGeneratingSong = true
-                            generationStatus = "Analyzing vocal timbre and harmonic frequencies..."
+                            generationStatus = "Analyzing vocal timbre and harmonic frequencies in Sur AI Studio..."
                             kotlinx.coroutines.delay(800)
                             generationStatus = "Generating musical arrangement & drum groove..."
                             kotlinx.coroutines.delay(800)
@@ -354,7 +374,7 @@ fun SunoAi100VoicesStudioDialog(
                             onGenerateWithVoice(
                                 selectedVoice!!.name,
                                 lyricsInput.ifBlank { "[Verse]\nAI Generated Song by ${selectedVoice!!.name}" },
-                                promptInput.ifBlank { "Suno AI Song" },
+                                promptInput.ifBlank { "Sur AI Song" },
                                 selectedGenre,
                                 selectedMood
                             )

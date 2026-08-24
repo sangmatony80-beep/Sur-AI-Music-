@@ -82,7 +82,7 @@ fun SplashScreen(onFinished: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Compose • Supabase • Suno v4 AI",
+                text = "Next-Gen AI Music & Lyrics Studio",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp
             )

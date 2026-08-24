@@ -86,7 +86,7 @@ fun PricingScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Supercharge your creativity with Suno v4 engine, massive token allowances, and professional licensing.",
+                        text = "Supercharge your creativity with Sur AI Studio engine, massive token allowances, and professional licensing.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center

@@ -287,7 +287,7 @@ fun AdvancedProStudioToolsDialog(
                                     if (isGeneratingChords) {
                                         CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White)
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Generating Chords via Gemini...")
+                                        Text("Generating Chords via Sur AI Engine...")
                                     } else {
                                         Icon(Icons.Default.AutoAwesome, contentDescription = null)
                                         Spacer(modifier = Modifier.width(6.dp))

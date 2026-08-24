@@ -63,7 +63,7 @@ fun MegaProStudioSuiteHub(
             "10. Bitcrusher & Sample Rate Downsampler"
         ),
         1 to listOf(
-            "11. AI Melody Generator via Gemini",
+            "11. Sur AI Neural Melody Generator",
             "12. AI Bassline Groove Arranger",
             "13. AI Drum Pattern Groove Quantizer",
             "14. AI Vocal Harmony Stacking Generator",

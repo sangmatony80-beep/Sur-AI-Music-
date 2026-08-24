@@ -401,7 +401,7 @@ fun HomeScreen(
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Create Tracks with Suno v4",
+                        text = "Create Tracks with Sur AI Studio",
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
@@ -994,12 +994,12 @@ fun HomeScreen(
 
     if (showStemDialog && viewModel != null) {
         val targetSong = songs.firstOrNull() ?: SongEntity(
-            title = "Demo AI Track",
+            title = "Sur AI Master Track",
             artist = "Sur AI",
             genre = "Pop",
-            audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+            audioUrl = "",
             imageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500",
-            lyrics = "Demo AI Studio Lyrics",
+            lyrics = "Sur AI Studio Lyrics",
             duration = "03:15"
         )
         StemMixerBottomSheet(
@@ -1018,12 +1018,12 @@ fun HomeScreen(
 
     if (showTrimmerDialog) {
         val targetSong = trimmerSongTarget ?: songs.firstOrNull() ?: SongEntity(
-            title = "Demo AI Track",
+            title = "Sur AI Master Track",
             artist = "Sur AI",
             genre = "Pop",
-            audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+            audioUrl = "",
             imageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500",
-            lyrics = "Demo AI Studio Lyrics",
+            lyrics = "Sur AI Studio Lyrics",
             duration = "03:15"
         )
         RingtoneTrimmerBottomSheet(

@@ -141,8 +141,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     @OptIn(ExperimentalCoroutinesApi::class)
     val tokenBalance: StateFlow<Int> = _userEmail
         .flatMapLatest { email ->
-            if (email != null) planRepository.getTokenBalance(email)
-            else flowOf(150)
+            val targetEmail = email ?: "guest@suraimusic.com"
+            planRepository.getTokenBalance(targetEmail)
         }
         .map { it ?: 150 }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 150)
@@ -227,7 +227,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var sleepTimerJob: kotlinx.coroutines.Job? = null
 
     // Followed Creators
-    val followedArtists = androidx.compose.runtime.mutableStateListOf<String>("Suno AI", "Sur Studio", "CyberBeats")
+    val followedArtists = androidx.compose.runtime.mutableStateListOf<String>("Sur AI Studio", "Sur Master", "CyberBeats")
 
     fun setPreset(preset: String) {
         eqPreset.value = preset
@@ -314,7 +314,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             title = "Neon Cyber Dreams",
                             artist = "Sur AI & SynthMaster",
                             genre = "Cyberpunk / Electronic",
-                            audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                            audioUrl = "",
                             imageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500",
                             lyrics = "[Verse 1]\nNeon lights glowing in the rain\nCircuit pulses through my brain\n(AI Chorus)\nWe are electric, we are the sound\nDancing on quantum ground!",
                             duration = "3:45",
@@ -323,9 +323,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         ),
                         SongEntity(
                             title = "Quantum Echoes",
-                            artist = "Suno v4 AI",
+                            artist = "Sur AI Master",
                             genre = "Ambient / Cinematic",
-                            audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+                            audioUrl = "",
                             imageUrl = "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500",
                             lyrics = "[Intro]\nFrequencies rising in the void\nTimelines folding, pure and alloyd\n[Chorus]\nEchoes of tomorrow sing tonight.",
                             duration = "4:12",
@@ -336,7 +336,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             title = "Future Lofi Chill",
                             artist = "Sur AI",
                             genre = "Lofi / HipHop",
-                            audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+                            audioUrl = "",
                             imageUrl = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500",
                             lyrics = "[Beat]\nCoffee steam and midnight code\nFloating down the neural road.",
                             duration = "2:58",
@@ -616,10 +616,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     suspend fun generateAiLyrics(prompt: String, language: String, genre: String, vibe: String): String {
+        val email = _userEmail.value ?: "guest@suraimusic.com"
+        planRepository.ensureWelcomeTokens(email)
+        planRepository.addTokenTransaction(email, -2, "ai_lyrics_generation", "AI Lyrics Generation")
+        
+        try {
+            val lyricRepo = com.example.data.repository.LyricRepository(getApplication())
+            val realLyrics = lyricRepo.fetchLyrics(prompt, genre, vibe, language)
+            if (realLyrics.isNotBlank()) {
+                return realLyrics
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainViewModel", "LyricRepository generation error, falling back to GoogleFlowMusicService", e)
+            try {
+                val musicService = com.example.data.gemini.GoogleFlowMusicService(getApplication())
+                val serviceLyrics = musicService.generateSurStudioLyrics(prompt, language, genre, vibe)
+                if (serviceLyrics.isNotBlank()) {
+                    return serviceLyrics
+                }
+            } catch (e2: Exception) {
+                android.util.Log.e("MainViewModel", "Fallback service error", e2)
+            }
+        }
+        
         return musicStudioRepository.generateAiLyrics(prompt, language, genre, vibe)
     }
 
     suspend fun transcribeSongToLyrics(): String {
+        val email = _userEmail.value ?: "guest@suraimusic.com"
+        planRepository.ensureWelcomeTokens(email)
+        planRepository.addTokenTransaction(email, -2, "ai_transcribe", "AI Audio Transcription")
         return musicStudioRepository.transcribeSongToLyrics()
     }
 
@@ -632,10 +658,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     suspend fun autoFinishLyrics(incompleteLyrics: String, rhymeScheme: String = "AABB"): String {
+        val email = _userEmail.value ?: "guest@suraimusic.com"
+        planRepository.ensureWelcomeTokens(email)
+        planRepository.addTokenTransaction(email, -2, "ai_lyrics_autofinish", "AI Rhyme & Lyricist Assistant")
         return musicStudioRepository.autoFinishLyrics(incompleteLyrics, rhymeScheme)
     }
 
     suspend fun transformLyricsGenre(lyrics: String, targetGenre: String): String {
+        val email = _userEmail.value ?: "guest@suraimusic.com"
+        planRepository.ensureWelcomeTokens(email)
+        planRepository.addTokenTransaction(email, -2, "ai_lyrics_transform", "AI Genre Lyric Transform")
         return musicStudioRepository.transformLyricsGenre(lyrics, targetGenre)
     }
 
@@ -644,15 +676,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
-    suspend fun saveLyricsHistory(title: String, language: String, lyrics: String, isClean: Boolean) {
-        musicStudioRepository.saveLyricsHistory(title, language, lyrics, isClean)
+    fun saveLyricsHistory(title: String, language: String, lyrics: String, isClean: Boolean) {
+        viewModelScope.launch {
+            musicStudioRepository.saveLyricsHistory(title, language, lyrics, isClean)
+        }
     }
 
-    suspend fun deleteLyricsHistory(id: Long) {
-        musicStudioRepository.deleteLyricsHistory(id)
+    fun deleteLyricsHistory(id: Long) {
+        viewModelScope.launch {
+            musicStudioRepository.deleteLyricsHistory(id)
+        }
     }
 
     suspend fun saveClonedVoice(name: String, desc: String) {
+        val email = _userEmail.value ?: "guest@suraimusic.com"
+        planRepository.ensureWelcomeTokens(email)
+        planRepository.addTokenTransaction(email, -5, "voice_clone", "Cloned AI Voice Model: $name")
         musicStudioRepository.saveClonedVoice(name, desc)
     }
 
@@ -678,18 +717,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ): SongEntity? {
         val email = _userEmail.value ?: "guest@suraimusic.com"
         try {
+            planRepository.ensureWelcomeTokens(email)
             planRepository.recordLyricCreation(email)
+            // Real token deduction for AI song creation (10 tokens)
+            planRepository.addTokenTransaction(
+                email = email,
+                amount = -10,
+                type = "ai_song_generation",
+                description = "AI Song Creation: ${prompt.take(20)}"
+            )
         } catch (_: Exception) {}
 
         val watermark = try { planRepository.hasWatermark(email) } catch (_: Exception) { true }
-        val finalLyrics = if (watermark) "$lyrics\n\n[Suno AI v4.0 • Mastered Studio Audio]" else lyrics
+        val finalLyrics = if (watermark) "$lyrics\n\n[সুর এআই মিউজিক স্টুডিও • Mastered Studio Audio DSP]" else lyrics
         val songTitle = if (prompt.isNotBlank()) prompt.trim() else "AI $genre Masterpiece"
 
         val genreFinal = if (vibe.isNotBlank() && !genre.contains(vibe)) "$genre • $vibe" else genre
         val artistLabel = if (voiceName.isNotBlank()) "$voiceName (AI Singer)" else (_currentUser.value?.fullName ?: "Sur AI Creator Studio")
 
         // Synthesize actual WAV master file using AiVocalSingingEngine with the selected AI Voice Model
-        var audioFilePath = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"
+        var audioFilePath = ""
         try {
             val wavFile = com.example.data.audio.AiVocalSingingEngine.getInstance(getApplication())
                 .synthesizeRealMasterSongWav(
@@ -817,17 +864,73 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     suspend fun loginWithCredentials(email: String, password: String): AuthResult {
+        val context = getApplication<android.app.Application>()
+        val firebaseAuthManager = com.example.auth.FirebaseAuthManager(context)
+        val fbResult = firebaseAuthManager.signInWithEmail(email, password)
+        if (fbResult.isSuccess) {
+            val fbUser = fbResult.getOrNull()
+            val userEmail = fbUser?.email ?: email
+            val fullName = fbUser?.displayName ?: email.substringBefore("@")
+            val existing = userRepository.getUserByEmail(userEmail)
+            val user = existing ?: UserEntity(
+                email = userEmail,
+                passwordHash = "",
+                fullName = fullName,
+                role = "USER"
+            ).also { userRepository.insertOrUpdateUser(it) }
+
+            _userEmail.value = user.email
+            _userRole.value = user.role
+            _currentUser.value = user
+            _isLoggedIn.value = true
+            try {
+                settingsDataStore.saveUserSession(user.email, user.role)
+                com.example.data.account.MultiAccountPoolManager(context).syncUserGoogleAccount(user.email, user.fullName)
+            } catch (_: Exception) {}
+            return AuthResult.Success(user)
+        }
+
         val result = supabaseUserSessionManager.signInWithEmail(email, password)
         if (result is AuthResult.Success) {
             _userEmail.value = result.user.email
             _userRole.value = result.user.role
             _currentUser.value = result.user
             _isLoggedIn.value = true
+            try {
+                com.example.data.account.MultiAccountPoolManager(getApplication()).syncUserGoogleAccount(result.user.email, result.user.fullName)
+            } catch (_: Exception) {}
         }
         return result
     }
 
     suspend fun loginWithGoogle(context: android.content.Context): AuthResult {
+        val firebaseAuthManager = com.example.auth.FirebaseAuthManager(context)
+        val fbResult = firebaseAuthManager.signInWithGoogle()
+        if (fbResult.isSuccess) {
+            val fbUser = fbResult.getOrNull()
+            if (fbUser != null) {
+                val email = fbUser.email ?: "google_user@suraimusic.com"
+                val fullName = fbUser.displayName ?: "Google Verified Artist"
+                val existing = userRepository.getUserByEmail(email)
+                val user = existing ?: UserEntity(
+                    email = email,
+                    passwordHash = "",
+                    fullName = fullName,
+                    role = "USER"
+                ).also { userRepository.insertOrUpdateUser(it) }
+
+                _userEmail.value = user.email
+                _userRole.value = user.role
+                _currentUser.value = user
+                _isLoggedIn.value = true
+                try {
+                    settingsDataStore.saveUserSession(user.email, user.role)
+                    com.example.data.account.MultiAccountPoolManager(context).syncUserGoogleAccount(user.email, user.fullName)
+                } catch (_: Exception) {}
+                return AuthResult.Success(user)
+            }
+        }
+
         val googleAuthManager = com.example.auth.GoogleAuthManager(context)
         val credential = try { googleAuthManager.getGoogleIdToken() } catch (_: Exception) { null }
         if (credential != null) {
@@ -839,6 +942,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _userRole.value = result.user.role
                 _currentUser.value = result.user
                 _isLoggedIn.value = true
+                try {
+                    com.example.data.account.MultiAccountPoolManager(context).syncUserGoogleAccount(result.user.email, result.user.fullName)
+                } catch (_: Exception) {}
             }
             return result
         }
@@ -855,6 +961,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isLoggedIn.value = true
         try {
             settingsDataStore.saveUserSession(fallbackUser.email, fallbackUser.role)
+            com.example.data.account.MultiAccountPoolManager(getApplication()).syncUserGoogleAccount(fallbackUser.email, fallbackUser.fullName)
         } catch (_: Exception) {}
         return AuthResult.Success(fallbackUser)
     }
@@ -881,17 +988,75 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isLoggedIn.value = true
         try {
             settingsDataStore.saveUserSession(user.email, user.role)
+            com.example.data.account.MultiAccountPoolManager(getApplication()).syncUserGoogleAccount(user.email, user.fullName)
+        } catch (_: Exception) {}
+        return AuthResult.Success(user)
+    }
+
+    suspend fun loginWithPhone(phoneNumber: String, otpCode: String): AuthResult {
+        val cleanPhone = phoneNumber.trim()
+        if (cleanPhone.length < 10) {
+            return AuthResult.Error("Please enter a valid phone number.")
+        }
+        if (otpCode.length < 4) {
+            return AuthResult.Error("Please enter a valid 4-digit OTP code.")
+        }
+        val email = "phone_${cleanPhone.replace("+", "").replace(" ", "")}@suraimusic.com"
+        val fullName = "Phone User $cleanPhone"
+        val existing = userRepository.getUserByEmail(email)
+        val user = existing ?: UserEntity(
+            email = email,
+            passwordHash = "",
+            fullName = fullName,
+            role = "USER"
+        ).also { userRepository.insertOrUpdateUser(it) }
+
+        _userEmail.value = user.email
+        _userRole.value = user.role
+        _currentUser.value = user
+        _isLoggedIn.value = true
+        try {
+            settingsDataStore.saveUserSession(user.email, user.role)
+            com.example.data.account.MultiAccountPoolManager(getApplication()).syncUserGoogleAccount(user.email, user.fullName)
         } catch (_: Exception) {}
         return AuthResult.Success(user)
     }
 
     suspend fun registerUser(email: String, password: String, fullName: String, role: String = "USER"): AuthResult {
+        val context = getApplication<android.app.Application>()
+        val firebaseAuthManager = com.example.auth.FirebaseAuthManager(context)
+        val fbResult = firebaseAuthManager.signUpWithEmail(email, password)
+        if (fbResult.isSuccess) {
+            val fbUser = fbResult.getOrNull()
+            val userEmail = fbUser?.email ?: email
+            val existing = userRepository.getUserByEmail(userEmail)
+            val user = existing ?: UserEntity(
+                email = userEmail,
+                passwordHash = "",
+                fullName = fullName.ifBlank { email.substringBefore("@") },
+                role = role
+            ).also { userRepository.insertOrUpdateUser(it) }
+
+            _userEmail.value = user.email
+            _userRole.value = user.role
+            _currentUser.value = user
+            _isLoggedIn.value = true
+            try {
+                settingsDataStore.saveUserSession(user.email, user.role)
+                com.example.data.account.MultiAccountPoolManager(context).syncUserGoogleAccount(user.email, user.fullName)
+            } catch (_: Exception) {}
+            return AuthResult.Success(user)
+        }
+
         val result = supabaseUserSessionManager.signUpWithEmail(email, password, fullName, role)
         if (result is AuthResult.Success) {
             _userEmail.value = result.user.email
             _userRole.value = result.user.role
             _currentUser.value = result.user
             _isLoggedIn.value = true
+            try {
+                com.example.data.account.MultiAccountPoolManager(getApplication()).syncUserGoogleAccount(result.user.email, result.user.fullName)
+            } catch (_: Exception) {}
         }
         return result
     }

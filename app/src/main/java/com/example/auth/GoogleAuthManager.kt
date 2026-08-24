@@ -15,8 +15,14 @@ class GoogleAuthManager(private val context: Context) {
     suspend fun getGoogleIdToken(): GoogleIdTokenCredential? = withContext(Dispatchers.Main) {
         val credentialManager = CredentialManager.create(context)
         
-        // This is a placeholder Web Client ID. In a real app, use the actual Server Client ID.
-        val serverClientId = "999999999999-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"
+        // Get configured client ID or use standard OAuth client request
+        val serverClientId = try {
+            val appInfo = context.packageManager.getApplicationInfo(context.packageName, android.content.pm.PackageManager.GET_META_DATA)
+            appInfo.metaData?.getString("com.google.android.gms.auth.api.credentials.SERVER_CLIENT_ID")
+                ?: "default-web-client-id"
+        } catch (_: Exception) {
+            "default-web-client-id"
+        }
 
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
@@ -38,7 +44,9 @@ class GoogleAuthManager(private val context: Context) {
                 return@withContext GoogleIdTokenCredential.createFrom(credential.data)
             }
         } catch (e: GetCredentialException) {
-            Log.w("GoogleAuthManager", "Google sign-in unavailable on this device/emulator: ${e.message}")
+            Log.w("GoogleAuthManager", "Google sign-in credential exception: ${e.message}")
+        } catch (e: Exception) {
+            Log.w("GoogleAuthManager", "Google sign-in exception: ${e.message}")
         }
         return@withContext null
     }

@@ -53,11 +53,14 @@ import com.example.ui.components.RiyazTanpuraStudioDialog
 import com.example.ui.components.AudioMasteringEqVisualizerDialog
 import com.example.ui.components.BengaliLyricistNotepadDialog
 import com.example.ui.components.AdvancedAiPromptBuilderDialog
-import com.example.ui.components.SunoAi100VoicesStudioDialog
-import com.example.ui.components.SunoLyricsGeneratorDialog
+import com.example.ui.components.SurAi100VoicesStudioDialog
+import com.example.ui.components.SurAiLyricsGeneratorDialog
 import com.example.ui.components.UltimateProStudioHubDialog
 import com.example.ui.components.MasterProExtensionsHubDialog
 import com.example.ui.components.MegaProStudioSuiteHub
+import com.example.aimusic.AiMusicStudio
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -145,12 +148,15 @@ fun CreateSongScreen(
     var showMasteringEqDialog by rememberSaveable { mutableStateOf(false) }
     var showLyricistNotepadDialog by rememberSaveable { mutableStateOf(false) }
     var showAdvancedPromptBuilderDialog by rememberSaveable { mutableStateOf(false) }
-    var showSunoAi100VoicesDialog by rememberSaveable { mutableStateOf(false) }
-    var showSunoLyricsDialog by rememberSaveable { mutableStateOf(false) }
+    var showSurAi100VoicesDialog by rememberSaveable { mutableStateOf(false) }
+    var showSurLyricsDialog by rememberSaveable { mutableStateOf(false) }
     var showProStudioToolsDialog by rememberSaveable { mutableStateOf(false) }
     var showUltimateHubDialog by rememberSaveable { mutableStateOf(false) }
     var showMasterHubDialog by rememberSaveable { mutableStateOf(false) }
     var showMegaHubDialog by rememberSaveable { mutableStateOf(false) }
+    var showLiveEngineStudioDialog by rememberSaveable { mutableStateOf(false) }
+    var defaultMusicEngine by rememberSaveable { mutableStateOf("google_flow") } // "google_flow" (Default) or "internal_synth"
+    var enginePromptForStudio by rememberSaveable { mutableStateOf("") }
     var appLanguage by rememberSaveable { mutableStateOf("en") }
     var customCoverArtUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var customClonedVoices by remember { mutableStateOf(listOf<String>()) }
@@ -186,11 +192,11 @@ fun CreateSongScreen(
     val availableInstruments = listOf("808 Bass", "Drums", "Electric Guitar", "Acoustic Piano", "Synthesizer", "Tabla", "Dotara", "Strings", "Brass", "Flute")
     var selectedInstruments by remember { mutableStateOf(setOf("808 Bass", "Drums", "Synthesizer")) }
 
-    // Core Feature 7 & 6: Suno v4 AI Music Generator & MP3 Export
+    // Core Feature 7 & 6: Sur AI Neural Music Generator & MP3 Export
     var isGeneratingSong by rememberSaveable { mutableStateOf(false) }
     var generationStepText by rememberSaveable { mutableStateOf("") }
-    var useExternalSunoApi by rememberSaveable { mutableStateOf(false) }
-    var externalSunoApiKey by rememberSaveable { mutableStateOf("") }
+    var useExternalSurApi by rememberSaveable { mutableStateOf(false) }
+    var externalSurApiKey by rememberSaveable { mutableStateOf("") }
 
     // Core Feature 10: Voice Cloning
     var cloneName by rememberSaveable { mutableStateOf("") }
@@ -330,7 +336,7 @@ fun CreateSongScreen(
         // SPECIAL / AI HYBRID & ENSEMBLE
         AiVoiceModel("Celestial Choir & Ensemble", "Ensemble", "👥", "Multi-Voice Harmony", "Global Choral", "Lush multi-part choral harmonies & cathedral reverb", "Ambient, Choral, Cinematic"),
         AiVoiceModel("CyberVoice X-9", "Special", "✨", "Robotic Harmonizer", "AI Synth", "Futuristic vocoder & multi-layered AI chorus", "Techno, House, EDM"),
-        AiVoiceModel("Suno AI v4 Prime", "Special", "✨", "Adaptive Multi-Range", "Multi-Lingual", "Dynamic neural vocal engine matching any prompt style", "All Genres")
+        AiVoiceModel("Sur AI Prime Master", "Special", "✨", "Adaptive Multi-Range", "Multi-Lingual", "Dynamic neural vocal engine engineered by Sur AI Studio", "All Genres")
     )
     val voices = aiVoiceModels.map { it.name }
 
@@ -440,8 +446,8 @@ fun CreateSongScreen(
                                     ) {
                                         Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
                                         Column {
-                                            Text("Suno v4 & GPT-4o AI Music Studio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                            Text("Fullsong generation, dual genre fusion, ElevenLabs vocal synthesis & 320kbps MP3 export.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text("সুর এআই মিউজিক স্টুডিও (Sur AI Neural Studio)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                            Text("Fullsong generation, dual genre fusion, vocal synthesis & 320kbps MP3 export.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                     }
                                 }
@@ -513,7 +519,7 @@ fun CreateSongScreen(
                                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable { showSunoAi100VoicesDialog = true }
+                                        .clickable { showSurAi100VoicesDialog = true }
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -535,8 +541,8 @@ fun CreateSongScreen(
                                             }
                                         }
                                         Column(modifier = Modifier.weight(1f)) {
-                                            Text("Suno.ai 100+ AI Voice Personas Studio", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                            Text("Select from 100+ Male, Female, Child, Rock & Jazz AI singer voices", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                                            Text("সুর এআই ১০০+ ভয়েস পারসোনা স্টুডিও", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                            Text("সুর এআই স্টুডিও ইঞ্জিনের সাহায্যে ১০০+ মেল, ফিমেল ও চাইল্ড কণ্ঠে গান তৈরি করুন", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
                                         }
                                         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                     }
@@ -1441,35 +1447,37 @@ fun CreateSongScreen(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Column {
-                                                Text("SurSun v4 & Suno Engine", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                                Text("Native AI Music & Voice Generation", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                            }
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text("External Suno API", style = MaterialTheme.typography.bodySmall)
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Switch(
-                                                    checked = useExternalSunoApi,
-                                                    onCheckedChange = { useExternalSunoApi = it },
-                                                    modifier = Modifier.height(24.dp)
-                                                )
+                                                Text("সুর এআই নিউরাল অডিও ইঞ্জিন", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                                Text("Real AI Music & Voice Neural Generation", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
-                                        if (useExternalSunoApi) {
-                                            OutlinedTextField(
-                                                value = externalSunoApiKey,
-                                                onValueChange = { externalSunoApiKey = it },
-                                                label = { Text("Suno AI API Key (Optional)") },
-                                                placeholder = { Text("sk-suno-...") },
-                                                singleLine = true,
+                                        Text(
+                                            text = "🟢 সুর এআই নিউরাল ও গুগল মিউজিক ইঞ্জিন সক্রিয়। লাইভ জেনারেটর মোডে স্টুডিও-কোয়ালিটি ভোকাল, লিরিক্স ও ৩২০kbps অডিও সরাসরি তৈরি হয়।",
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Button(
+                                                onClick = { showLiveEngineStudioDialog = true },
                                                 shape = RoundedCornerShape(10.dp),
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                        } else {
-                                            Text(
-                                                text = "🟢 SurSun v4 Native AI Engine active. Generates studio-grade vocals, melodies & 320kbps masters directly inside Sur AI Music.",
-                                                fontSize = 11.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("গুগল ফ্লো স্টুডিও", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            }
+                                            OutlinedButton(
+                                                onClick = { showLiveEngineStudioDialog = true },
+                                                shape = RoundedCornerShape(10.dp),
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Icon(Icons.Default.Language, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("গুগল মিউজিক FX", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            }
                                         }
                                     }
                                 }
@@ -1541,6 +1549,67 @@ fun CreateSongScreen(
                             }
 
                             item {
+                                // Default Engine Mode Selector
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (defaultMusicEngine == "google_flow") MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surfaceVariant
+                                    ),
+                                    shape = RoundedCornerShape(16.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Icon(Icons.Default.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                                Text("মিউজিক জেনারেশন ইঞ্জিন", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            }
+                                            Surface(
+                                                color = MaterialTheme.colorScheme.primary,
+                                                shape = RoundedCornerShape(6.dp)
+                                            ) {
+                                                Text(
+                                                    text = if (defaultMusicEngine == "google_flow") "গুগল ফ্লো সক্রিয় (ডিফল্ট)" else "অফলাইন সুর সিন্থ",
+                                                    color = MaterialTheme.colorScheme.onPrimary,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            FilterChip(
+                                                selected = defaultMusicEngine == "google_flow",
+                                                onClick = { defaultMusicEngine = "google_flow" },
+                                                label = { Text("🌐 গুগল মিউজিক ও ফ্লো (ডিফল্ট)", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            FilterChip(
+                                                selected = defaultMusicEngine == "internal_synth",
+                                                onClick = { defaultMusicEngine = "internal_synth" },
+                                                label = { Text("🎙️ সুর সিন্থ", fontSize = 11.sp) },
+                                                modifier = Modifier.weight(0.6f)
+                                            )
+                                        }
+                                        Text(
+                                            text = if (defaultMusicEngine == "google_flow") 
+                                                "⚡ গুগল মিউজিক ও ফ্লো ইঞ্জিন দিয়ে ৩২০kbps হাই-কোয়ালিটি ভোকাল, বিটস ও ফুল অডিও গান সরাসরি তৈরি হবে।" 
+                                                else "🎙️ লোকাল হারমোনিক সিন্থেসাইজারে গান তৈরি হবে।",
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+
+                            item {
                                 if (isGeneratingSong) {
                                     Card(
                                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -1554,7 +1623,7 @@ fun CreateSongScreen(
                                         ) {
                                             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                             Column {
-                                                Text("Suno v4 Generation Active", fontWeight = FontWeight.Bold)
+                                                Text("সুর এআই রেন্ডারিং চলছে...", fontWeight = FontWeight.Bold)
                                                 Text(generationStepText, style = MaterialTheme.typography.bodySmall)
                                             }
                                         }
@@ -1562,31 +1631,45 @@ fun CreateSongScreen(
                                 } else {
                                     Button(
                                         onClick = {
-                                            scope.launch {
-                                                isGeneratingSong = true
-                                                generationStepText = "1/4: Structuring chords & harmonic arrangement..."
-                                                delay(500)
-                                                generationStepText = "2/4: Synthesizing $selectedVoice vocal melody..."
-                                                delay(500)
-                                                generationStepText = "3/4: Rendering $primaryGenre instrumentation & beats..."
-                                                delay(500)
-                                                generationStepText = "4/4: Mastering real 44.1kHz audio stream..."
-                                                delay(400)
-                                                val genreFinal = if (isDualGenreEnabled) "$primaryGenre + $secondaryGenre" else primaryGenre
-                                                
-                                                if (onGeneratePreviewSong != null) {
-                                                    val created = onGeneratePreviewSong(prompt, genreFinal, selectedVibe, customLyrics, selectedVoice)
-                                                    isGeneratingSong = false
-                                                    if (created != null) {
-                                                        previewSong = created
-                                                        Toast.makeText(context, "গান সফলভাবে তৈরি হয়েছে! প্রিভিউ শুনুন।", Toast.LENGTH_SHORT).show()
+                                            val genreFinal = if (isDualGenreEnabled) "$primaryGenre + $secondaryGenre" else primaryGenre
+                                            val constructedPrompt = if (prompt.isNotBlank()) {
+                                                "$prompt, $genreFinal style, $selectedVibe mood, vocal $selectedVoice"
+                                            } else if (customLyrics.isNotBlank()) {
+                                                "Song lyrics: ${customLyrics.take(120)}, Genre: $genreFinal, Mood: $selectedVibe"
+                                            } else {
+                                                "Bangla melody acoustic pop song with $selectedVoice voice, $genreFinal style, $selectedVibe vibe"
+                                            }
+
+                                            if (defaultMusicEngine == "google_flow") {
+                                                enginePromptForStudio = constructedPrompt
+                                                showLiveEngineStudioDialog = true
+                                                Toast.makeText(context, "🌐 গুগল মিউজিক ও ফ্লো ইঞ্জিন সক্রিয়! সরাসরি লাইভ গান তৈরি হচ্ছে...", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                scope.launch {
+                                                    isGeneratingSong = true
+                                                    generationStepText = "1/4: Structuring chords & harmonic arrangement..."
+                                                    delay(500)
+                                                    generationStepText = "2/4: Synthesizing $selectedVoice vocal melody..."
+                                                    delay(500)
+                                                    generationStepText = "3/4: Rendering $primaryGenre instrumentation & beats..."
+                                                    delay(500)
+                                                    generationStepText = "4/4: Mastering real 44.1kHz audio stream..."
+                                                    delay(400)
+                                                    
+                                                    if (onGeneratePreviewSong != null) {
+                                                        val created = onGeneratePreviewSong(prompt, genreFinal, selectedVibe, customLyrics, selectedVoice)
+                                                        isGeneratingSong = false
+                                                        if (created != null) {
+                                                            previewSong = created
+                                                            Toast.makeText(context, "গান সফলভাবে তৈরি হয়েছে! প্রিভিউ শুনুন।", Toast.LENGTH_SHORT).show()
+                                                        } else {
+                                                            Toast.makeText(context, "গান তৈরিতে সমস্যা হয়েছে, অনুগ্রহ করে আবার চেষ্টা করুন।", Toast.LENGTH_SHORT).show()
+                                                        }
                                                     } else {
-                                                        Toast.makeText(context, "গান তৈরিতে সমস্যা হয়েছে, অনুগ্রহ করে আবার চেষ্টা করুন।", Toast.LENGTH_SHORT).show()
+                                                        isGeneratingSong = false
+                                                        onGenerateSong(prompt, genreFinal, selectedVibe, customLyrics, selectedVoice)
+                                                        Toast.makeText(context, "AI Song Generated & Added to Player!", Toast.LENGTH_SHORT).show()
                                                     }
-                                                } else {
-                                                    isGeneratingSong = false
-                                                    onGenerateSong(prompt, genreFinal, selectedVibe, customLyrics, selectedVoice)
-                                                    Toast.makeText(context, "AI Song Generated & Added to Player!", Toast.LENGTH_SHORT).show()
                                                 }
                                             }
                                         },
@@ -1598,7 +1681,11 @@ fun CreateSongScreen(
                                     ) {
                                         Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = null)
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Generate Full AI Song (গান তৈরি করুন)", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                        Text(
+                                            text = if (defaultMusicEngine == "google_flow") "গুগল মিউজিকে গান তৈরি করুন (ডিফল্ট)" else "সুর সিন্থে গান তৈরি করুন", 
+                                            fontSize = 15.sp, 
+                                            fontWeight = FontWeight.Bold
+                                        )
                                     }
                                 }
                             }
@@ -1656,14 +1743,14 @@ fun CreateSongScreen(
                                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                         Text("AI Generator & Whisper Transcribe", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                         Button(
-                                            onClick = { showSunoLyricsDialog = true },
+                                            onClick = { showSurLyricsDialog = true },
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = RoundedCornerShape(12.dp),
                                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6))
                                         ) {
                                             Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
                                             Spacer(modifier = Modifier.width(6.dp))
-                                            Text("✨ সুনো এআই স্ট্রাকচারড লিরিক্স জেনারেটর", fontWeight = FontWeight.Bold)
+                                            Text("✨ সুর এআই মিউজিক স্টুডিও লিরিক্স জেনারেটর", fontWeight = FontWeight.Bold)
                                         }
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
@@ -2747,10 +2834,10 @@ fun CreateSongScreen(
         )
     }
 
-    if (showSunoLyricsDialog) {
-        SunoLyricsGeneratorDialog(
+    if (showSurLyricsDialog) {
+        SurAiLyricsGeneratorDialog(
             initialPrompt = prompt,
-            onDismiss = { showSunoLyricsDialog = false },
+            onDismiss = { showSurLyricsDialog = false },
             onApplyLyrics = { generatedLyrics ->
                 customLyrics = generatedLyrics
             }
@@ -2791,9 +2878,9 @@ fun CreateSongScreen(
         )
     }
 
-    if (showSunoAi100VoicesDialog) {
-        SunoAi100VoicesStudioDialog(
-            onDismiss = { showSunoAi100VoicesDialog = false },
+    if (showSurAi100VoicesDialog) {
+        SurAi100VoicesStudioDialog(
+            onDismiss = { showSurAi100VoicesDialog = false },
             onGenerateWithVoice = { voiceName, lyrics, promptText, genre, mood ->
                 onGenerateSong(promptText, genre, mood, lyrics, voiceName)
                 android.widget.Toast.makeText(context, "✨ Generated AI Song with $voiceName!", android.widget.Toast.LENGTH_LONG).show()
@@ -2838,6 +2925,38 @@ fun CreateSongScreen(
                 android.widget.Toast.makeText(context, if (newLang == "bn") "🇧🇩 বাংলা ভাষা সিলেক্ট করা হয়েছে" else "🇬🇧 English Language Selected", android.widget.Toast.LENGTH_SHORT).show()
             }
         )
+    }
+
+    if (showLiveEngineStudioDialog) {
+        Dialog(
+            onDismissRequest = { showLiveEngineStudioDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(modifier = Modifier.fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Default.Language, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Text("সুর এআই লাইভ ইঞ্জিন স্টুডিও", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        }
+                        IconButton(onClick = { showLiveEngineStudioDialog = false }) {
+                            Icon(Icons.Default.Close, contentDescription = "Close")
+                        }
+                    }
+                    AiMusicStudio(
+                        modifier = Modifier.fillMaxSize(),
+                        initialPrompt = enginePromptForStudio
+                    )
+                }
+            }
+        }
     }
 
     // Instant Audio Preview Dialog after Generation

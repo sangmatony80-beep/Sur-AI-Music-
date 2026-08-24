@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.local.UserEntity
 import com.example.data.repository.*
+import com.example.ui.components.MultiAccountPoolManagementDialog
 import com.example.ui.components.OpenSourceMusicModelInstallerDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -606,6 +607,12 @@ private fun RevenueAndCostsAdminTab(
     stats: UserStatsData,
     apiCost: ApiCostTrackerData
 ) {
+    var showPoolDialog by remember { mutableStateOf(false) }
+
+    if (showPoolDialog) {
+        MultiAccountPoolManagementDialog(onDismiss = { showPoolDialog = false })
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -613,6 +620,41 @@ private fun RevenueAndCostsAdminTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Multi-Account Pool & Credit Resale Engine Manager
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1B4B)),
+            border = BorderStroke(1.dp, Color(0xFF6366F1))
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.CloudQueue, contentDescription = null, tint = Color(0xFFA5B4FC))
+                        Column {
+                            Text("১০০+ ইমেইল ইঞ্জিন নোড হাব ও ক্রেডিট সেলস", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                            Text("আনলিমিটেড ডেইলি ফ্রি ক্রেডিট লোড-ব্যালেন্সার", fontSize = 11.sp, color = Color(0xFFC7D2FE))
+                        }
+                    }
+                }
+                Text("১০০+ ইমেইল একাউন্ট যুক্ত করে দৈনিক হাজার হাজার ফ্রি এআই ক্রেডিট অটো-ম্যানেজ করুন এবং ইউজারদের কাছে পেইড টোকেন হিসেবে বিক্রি করে আয় করুন।", fontSize = 12.sp, color = Color(0xFFE0E7FF), lineHeight = 16.sp)
+
+                Button(
+                    onClick = { showPoolDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1))
+                ) {
+                    Icon(Icons.Default.AdminPanelSettings, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("১০০+ একাউন্ট পুল ও ক্রেডিট হাব ওপেন করুন", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+            }
+        }
+
         // Income Dashboard
         Card(
             shape = RoundedCornerShape(20.dp),
@@ -646,7 +688,7 @@ private fun RevenueAndCostsAdminTab(
         // API Cost Tracker
         Card(shape = RoundedCornerShape(20.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("☁️ API Cost Tracker (Gemini & Suno AI)", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                Text("☁️ সুর এআই ইঞ্জিন কস্ট ট্র্যাকার (Sur AI Neural Nodes)", fontWeight = FontWeight.Bold, fontSize = 17.sp)
                 Text("Provider: ${apiCost.provider} • Total Cost: $${apiCost.totalCostUSD}", fontSize = 12.sp)
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -1124,11 +1166,11 @@ private fun SongCatalogAndFeaturedAdminTab() {
     var songsList by remember {
         mutableStateOf(
             listOf(
-                AdminCatalogSong("s1", "পদ্মার ঢেউয়ে সুর", "@bengal_beats", "Folk Fusion", 14200, 1840, "Suno v4 Pro", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600", isFeatured = true),
-                AdminCatalogSong("s2", "Cyber Dhaka 2088", "@synth_master", "Synthwave", 9850, 1120, "Suno v4 HD", "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600", isFeatured = true),
-                AdminCatalogSong("s3", "মন মাঝি রে তুই কোথায়", "@baul_soul", "Baul Acoustic", 18300, 2400, "Gemini Flash Audio", "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600", isFeatured = false),
-                AdminCatalogSong("s4", "বৃষ্টি ভেজা নির্জন রাত", "@tahsan_ai", "Pop Ballad", 7400, 890, "Suno v4 Pro", "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=600", isFeatured = false),
-                AdminCatalogSong("s5", "Rock Revolution BD", "@metal_dhaka", "Rock / Metal", 4200, 310, "Suno v3.5", "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=600", isFeatured = false, isFlagged = true)
+                AdminCatalogSong("s1", "পদ্মার ঢেউয়ে সুর", "@bengal_beats", "Folk Fusion", 14200, 1840, "সুর এআই প্রো", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600", isFeatured = true),
+                AdminCatalogSong("s2", "Cyber Dhaka 2088", "@synth_master", "Synthwave", 9850, 1120, "সুর এআই এইচডি", "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600", isFeatured = true),
+                AdminCatalogSong("s3", "মন মাঝি রে তুই কোথায়", "@baul_soul", "Baul Acoustic", 18300, 2400, "সুর এআই স্টুডিও", "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600", isFeatured = false),
+                AdminCatalogSong("s4", "বৃষ্টি ভেজা নির্জন রাত", "@tahsan_ai", "Pop Ballad", 7400, 890, "সুর এআই প্রো", "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=600", isFeatured = false),
+                AdminCatalogSong("s5", "Rock Revolution BD", "@metal_dhaka", "Rock / Metal", 4200, 310, "সুর এআই মাস্টার", "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=600", isFeatured = false, isFlagged = true)
             )
         )
     }
@@ -1615,8 +1657,8 @@ private fun LiveApiAndServerHealthAdminTab() {
     var isRunningDiagnostics by remember { mutableStateOf(false) }
 
     val services = listOf(
-        ServiceHealthItem("Suno AI Audio Engine v4.0", "Inference Cloud", "OPERATIONAL", 412, 99.8, "Queue: 4 jobs • 48kHz Lossless"),
-        ServiceHealthItem("Google Gemini 2.0 Flash / Pro", "Google Cloud AI", "OPERATIONAL", 168, 99.99, "RPM: 42/1000 • Latency: 168ms"),
+        ServiceHealthItem("সুর এআই নিউরাল অডিও ইঞ্জিন", "Sur AI Cloud / Neural DSP", "OPERATIONAL", 142, 99.98, "Neural DSP: Active • 48kHz Master Mode"),
+        ServiceHealthItem("সুর এআই লিরিক্স ও সুর প্রসেসর", "Sur AI Global Cloud", "OPERATIONAL", 168, 99.99, "RPM: 42/1000 • Latency: 168ms"),
         ServiceHealthItem("Supabase Postgres Database & Auth", "Supabase Cloud", "OPERATIONAL", 84, 99.95, "Active Connections: 38 • IOPS: Normal"),
         ServiceHealthItem("Cloudflare CDN Edge Streaming", "Cloudflare Global", "OPERATIONAL", 42, 100.0, "Cache Hit Rate: 97.4% • BW: 14.2 MB/s"),
         ServiceHealthItem("bKash & Nagad MFS Webhook Gateway", "Local MFS API", "OPERATIONAL", 115, 99.9, "Instant IPN Callbacks Active")
@@ -1835,7 +1877,7 @@ private fun InAppBannersAndAlertsAdminTab() {
             listOf(
                 AdminInAppBanner("b1", "🔥 ঈদ স্পেশাল উৎসব - প্রো প্ল্যানে ৫০% ছাড়!", "কোড EID2026 দিয়ে আনলক করুন আনলিমিটেড এআই মিউজিক জেনারেশন", "SPECIAL OFFER", "Pricing", true, Color(0xFF8B5CF6), Color(0xFFEC4899)),
                 AdminInAppBanner("b2", "🏆 বাউল ফিউশন কনটেস্ট ২০২৬ শুরু হয়েছে!", "আপনার সেরা গান সাবমিট করে জিতে নিন ৳১০,০০০ নগদ পুরষ্কার", "CONTEST", "Explore", true, Color(0xFFF59E0B), Color(0xFFEF4444)),
-                AdminInAppBanner("b3", "⚡ Suno AI v4.0 স্টুডিও ইঞ্জিন আপগ্রেড", "এখন লিরিক্স ও ভোকালে পাবেন ৪৪.১kHz স্টুডিও মাস্টার কোয়ালিটি", "NEW UPDATE", "Create", false, Color(0xFF10B981), Color(0xFF3B82F6))
+                AdminInAppBanner("b3", "⚡ সুর এআই স্টুডিও ইঞ্জিন আপগ্রেড", "এখন লিরিক্স ও ভোকালে পাবেন ৪৪.১kHz স্টুডিও মাস্টার কোয়ালিটি", "NEW UPDATE", "Create", false, Color(0xFF10B981), Color(0xFF3B82F6))
             )
         )
     }
@@ -2539,7 +2581,7 @@ private fun AiGatewayRateLimitAdminTab() {
                     Icon(Icons.Default.SmartToy, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Text("🤖 AI মডেল গেটওয়ে ও টোকেন রেট-লিমিটার", fontWeight = FontWeight.Bold, fontSize = 17.sp)
                 }
-                Text("Gemini API মডেল রাউটিং, টেম্পারেচার, প্রম্পট ক্যাচিং এবং ইউজার কোটা ম্যানেজ করুন।", fontSize = 12.sp)
+                Text("Sur AI Neural Engine মডেল রাউটিং, টেম্পারেচার, প্রম্পট ক্যাচিং এবং ইউজার কোটা ম্যানেজ করুন।", fontSize = 12.sp)
 
                 OutlinedTextField(
                     value = selectedModel,

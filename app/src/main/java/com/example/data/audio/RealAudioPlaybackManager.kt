@@ -106,9 +106,20 @@ class RealAudioPlaybackManager(private val context: Context) {
         var url = song.audioUrl.trim()
         val isLocalFile = url.startsWith("/") || url.startsWith("file://")
         
-        // Ensure demo streams and local synthetic fallbacks map to real cloud hosted mp3s for actual playback if not a real local file
-        if (!isLocalFile && (url.isBlank() || url.contains("demo") || url.contains("raw.vocal") || url.contains("tuned.vocal") || url.contains("example"))) {
-            url = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+        // Ensure demo streams and local synthetic fallbacks map to real locally synthesized WAV files
+        if (!isLocalFile && (url.isBlank() || url.contains("demo") || url.contains("raw.vocal") || url.contains("tuned.vocal") || url.contains("example") || url.contains("soundhelix"))) {
+            try {
+                url = kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+                    AiVocalSingingEngine.getInstance(context).synthesizeRealMasterSongWav(
+                        title = song.title.ifBlank { "Sur AI Track" },
+                        artist = song.artist.ifBlank { "Sur AI" },
+                        genre = song.genre.ifBlank { "Pop" },
+                        vibe = "Melodious",
+                        voiceName = song.artist,
+                        lyrics = song.lyrics
+                    ).absolutePath
+                }
+            } catch (_: Exception) {}
         }
 
         try {

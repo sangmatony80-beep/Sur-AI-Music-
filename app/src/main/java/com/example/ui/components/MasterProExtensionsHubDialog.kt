@@ -264,7 +264,7 @@ fun MasterProExtensionsHubDialog(
                                     if (isRhymeLoading) {
                                         CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White)
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Finding Rhymes via Gemini...")
+                                        Text("Finding Rhymes via Sur AI Studio...")
                                     } else {
                                         Icon(Icons.Default.AutoAwesome, contentDescription = null)
                                         Spacer(modifier = Modifier.width(6.dp))

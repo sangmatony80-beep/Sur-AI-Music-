@@ -150,11 +150,29 @@ fun SurMusicApp(viewModel: MainViewModel) {
                             res
                         },
                         onGoogleSignIn = {
-                            val res = viewModel.loginWithSocialAccount("Google", "sangmatony80@gmail.com", "Sangma Tony")
+                            val res = viewModel.loginWithGoogle(context)
+                            if (res is com.example.data.repository.AuthResult.Error) {
+                                viewModel.showGlobalError(
+                                    title = if (appLanguage == "bn") "গুগল লগইন ব্যর্থ হয়েছে" else "Google Sign-In Failed",
+                                    message = res.message,
+                                    category = com.example.ui.components.ErrorCategory.AUTHENTICATION,
+                                    severity = com.example.ui.components.ErrorSeverity.ERROR,
+                                    autoDismissMillis = 6000L
+                                )
+                            }
                             res
                         },
                         onFacebookSignIn = {
-                            val res = viewModel.loginWithSocialAccount("Facebook", "sangmatony80@gmail.com", "Sangma Tony")
+                            val res = viewModel.loginWithFacebook()
+                            if (res is com.example.data.repository.AuthResult.Error) {
+                                viewModel.showGlobalError(
+                                    title = if (appLanguage == "bn") "ফেসবুক লগইন ব্যর্থ হয়েছে" else "Facebook Sign-In Failed",
+                                    message = res.message,
+                                    category = com.example.ui.components.ErrorCategory.AUTHENTICATION,
+                                    severity = com.example.ui.components.ErrorSeverity.ERROR,
+                                    autoDismissMillis = 6000L
+                                )
+                            }
                             res
                         },
                         onSocialSignIn = { provider, email, name ->
@@ -162,6 +180,19 @@ fun SurMusicApp(viewModel: MainViewModel) {
                             if (res is com.example.data.repository.AuthResult.Error) {
                                 viewModel.showGlobalError(
                                     title = if (appLanguage == "bn") "$provider লগইন ব্যর্থ হয়েছে" else "$provider Sign-In Failed",
+                                    message = res.message,
+                                    category = com.example.ui.components.ErrorCategory.AUTHENTICATION,
+                                    severity = com.example.ui.components.ErrorSeverity.ERROR,
+                                    autoDismissMillis = 6000L
+                                )
+                            }
+                            res
+                        },
+                        onPhoneSignIn = { phone, otp ->
+                            val res = viewModel.loginWithPhone(phone, otp)
+                            if (res is com.example.data.repository.AuthResult.Error) {
+                                viewModel.showGlobalError(
+                                    title = if (appLanguage == "bn") "ফোন নম্বর লগইন ব্যর্থ হয়েছে" else "Phone Sign-In Failed",
                                     message = res.message,
                                     category = com.example.ui.components.ErrorCategory.AUTHENTICATION,
                                     severity = com.example.ui.components.ErrorSeverity.ERROR,
@@ -216,6 +247,7 @@ fun SurMusicApp(viewModel: MainViewModel) {
                                     val isBangla = appLanguage == "bn"
                                     val titleText = when (currentScreen) {
                                         "home" -> if (isBangla) "সুর এআই হোম" else "Sur AI Home"
+                                        "sur_live_studio", "live_studio" -> if (isBangla) "সুর এআই লাইভ স্টুডিও" else "Sur AI Live Studio"
                                         "downloads" -> if (isBangla) "ডাউনলোড ও অফলাইন সেন্টার" else "Downloads & Offline Center"
                                         "create", "create_gen" -> if (isBangla) "এআই গান জেনারেটর" else "AI Studio Generator"
                                         "create_lyrics" -> if (isBangla) "লিরিক্স স্টুডিও" else "Lyrics Studio"
@@ -357,6 +389,7 @@ fun SurMusicApp(viewModel: MainViewModel) {
                                     allSongs = songs,
                                     onPlaySong = { song -> viewModel.playSong(song) }
                                 )
+                                "sur_live_studio", "live_studio" -> com.example.aimusic.AiMusicStudio()
                                 "create", "create_gen" -> CreateSongScreen(
                                     lyricsHistory = lyricsHistory,
                                     clonedVoices = clonedVoices,
@@ -396,44 +429,19 @@ fun SurMusicApp(viewModel: MainViewModel) {
                                     onSeek = { pos -> viewModel.seekToProgress(pos) },
                                     onNavigateToHome = { currentScreen = "home" }
                                 )
-                                "create_lyrics" -> CreateSongScreen(
+                                "create_lyrics" -> LyricsStudioScreen(
+                                    appLanguage = appLanguage,
                                     lyricsHistory = lyricsHistory,
-                                    clonedVoices = clonedVoices,
-                                    onGenerateSong = { prompt, genre, vibe, lyrics, voice ->
-                                        viewModel.generateAiSong(prompt, genre, vibe, lyrics, voice)
-                                        currentScreen = "home"
+                                    onNavigateBack = { currentScreen = "home" },
+                                    onSendToSongGenerator = { lyrics, genre, topic ->
+                                        currentScreen = "create_gen"
                                     },
-                                    onGenerateLyrics = { prompt, lang, genre, vibe ->
-                                        viewModel.generateAiLyrics(prompt, lang, genre, vibe)
-                                    },
-                                    onCheckCopyright = { lyrics -> viewModel.checkCopyright(lyrics) },
                                     onSaveLyrics = { title, lang, lyrics, isClean ->
                                         viewModel.saveLyricsHistory(title, lang, lyrics, isClean)
                                     },
                                     onDeleteLyrics = { id ->
                                         viewModel.deleteLyricsHistory(id)
-                                        id
-                                    },
-                                    onSaveVoice = { name, desc -> viewModel.saveClonedVoice(name, desc) },
-                                    onDeleteVoice = { id -> viewModel.deleteClonedVoice(id) },
-                                    getChords = { genre -> viewModel.getChordProgressions(genre) },
-                                    getBeats = { genre -> viewModel.getBeatSuggestions(genre) },
-                                    getMelody = { key, scale -> viewModel.generateMelodyNotes(key, scale) },
-                                    onAnalyzeMood = { lyrics -> viewModel.analyzeLyricsMood(lyrics) },
-                                    onAutoFinishLyrics = { lyrics, scheme -> viewModel.autoFinishLyrics(lyrics, scheme) },
-                                    onTransformGenre = { lyrics, genre -> viewModel.transformLyricsGenre(lyrics, genre) },
-                                    onAnalyzeVocal = { viewModel.analyzeVocalPerformance() },
-                                    initialTab = 1,
-                                    onGeneratePreviewSong = { prompt, genre, vibe, lyrics, voice ->
-                                        viewModel.generateSongForPreview(prompt, genre, vibe, lyrics, voice)
-                                    },
-                                    isPlaying = isPlaying,
-                                    playbackProgress = playbackProgress,
-                                    playbackDurationSeconds = playbackDurationSeconds,
-                                    isBuffering = isAudioBuffering,
-                                    onPlayPause = { viewModel.togglePlayPause() },
-                                    onSeek = { pos -> viewModel.seekToProgress(pos) },
-                                    onNavigateToHome = { currentScreen = "home" }
+                                    }
                                 )
                                 "create_adv" -> CreateSongScreen(
                                     lyricsHistory = lyricsHistory,
