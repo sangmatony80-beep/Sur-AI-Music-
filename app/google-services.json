@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "206415669272",
+    "project_id": "sur-ai-music",
+    "storage_bucket": "sur-ai-music.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:206415669272:android:9b0ae02ca4fbc209663b6d",
+        "android_client_info": {
+          "package_name": "com.aistudio.suraimusic.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHvJV-9Zujfl9zPALXhdTyGt_3pY_EEe4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:206415669272:android:0b3880aa203fd9e9663b6d",
+        "android_client_info": {
+          "package_name": "com.sur.aimusic"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHvJV-9Zujfl9zPALXhdTyGt_3pY_EEe4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
